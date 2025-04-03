@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface IMarketService {
 
-    String findBySymbol(String symbol);
+    StockDTO findBySymbol(String symbol);
     List<StockDTO> getRelevantStocks();
 
     // String findAllSymbols();

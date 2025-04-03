@@ -8,6 +8,10 @@ public class StockDTO {
     private double lowPrice;
     private double previousClosePrice;
 
+    public StockDTO() {
+
+    }
+
     public StockDTO(String symbol, String description, double currentPrice, double highPrice, double lowPrice, double previousClosePrice) {
         this.symbol = symbol;
         this.description = description;
