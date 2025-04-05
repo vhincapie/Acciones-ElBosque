@@ -1,7 +1,9 @@
 package co.edu.unbosque.accioneselbosqueapi.controller.implementations;
 
 import co.edu.unbosque.accioneselbosqueapi.controller.interfaces.IMarketAPI;
+import co.edu.unbosque.accioneselbosqueapi.model.DTO.StockDTO;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IMarketService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,15 +19,19 @@ public class MarketController implements IMarketAPI {
     }
 
     @Override
-    public ResponseEntity<?> findBySymbol(String symbol) {
-        String stockData = marketService.findBySymbol(symbol);
-        return ResponseEntity.ok(stockData);
+    public ResponseEntity<StockDTO> findBySymbol(String symbol) {
+        StockDTO dto = marketService.findBySymbol(symbol);
+        return ResponseEntity
+                .status(HttpStatus.OK.value())
+                .body(dto);
     }
 
     @Override
-    public ResponseEntity<List<?>> getRelevantStocks() {
-        List<?> relevantStocks = marketService.getRelevantStocks();
-        return ResponseEntity.ok(relevantStocks);
+    public ResponseEntity<List<StockDTO>> getRelevantStocks() {
+        List<StockDTO> stockList = marketService.getRelevantStocks();
+        return ResponseEntity
+                .status(HttpStatus.OK.value())
+                .body(stockList);
     }
 
  /*   @Override
