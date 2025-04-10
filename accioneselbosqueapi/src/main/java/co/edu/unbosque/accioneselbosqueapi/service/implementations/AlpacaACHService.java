@@ -1,9 +1,11 @@
 package co.edu.unbosque.accioneselbosqueapi.service.implementations;
 
+import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.ACHBadRequestException;
+import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.ACHConflictException;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.ACHRelationShipDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.ResponseACHDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.ACHRelationShip;
-import co.edu.unbosque.accioneselbosqueapi.repositories.ACHRepository;
+import co.edu.unbosque.accioneselbosqueapi.repository.ACHRepository;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IAlpacaACHService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
@@ -16,7 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 @Service
-public class AlpacaACHService implements IAlpacaACHService<ACHRelationShipDTO, Integer> {
+public class AlpacaACHService implements IAlpacaACHService<ACHRelationShipDTO, String> {
 
     @Value("${alpaca.api-key}")
     private String apiKey;
@@ -31,80 +33,83 @@ public class AlpacaACHService implements IAlpacaACHService<ACHRelationShipDTO, I
     private final ModelMapper modelMapper;
     private final ObjectMapper objectMapper;
 
-    public AlpacaACHService(ACHRepository achRepository, ModelMapper modelMapper, ObjectMapper objectMapper, OkHttpClient client) {
+    public AlpacaACHService(OkHttpClient client, ACHRepository achRepository, ModelMapper modelMapper, ObjectMapper objectMapper) {
+        this.client = client;
         this.achRepository = achRepository;
         this.modelMapper = modelMapper;
         this.objectMapper = objectMapper;
-        this.client = client;
     }
 
     @Override
     public ResponseACHDTO create(ACHRelationShipDTO achRelationShipDTO, String accountId) {
         if (accountId == null || accountId.trim().isEmpty()) {
-            throw new IllegalArgumentException("El accountId no puede ser nulo o vacío");
+            throw new ACHBadRequestException("El accountId no puede ser nulo o vacío");
         }
 
-        // Validación condicional si es internacional (BIC)
-        if ("BIC".equalsIgnoreCase(achRelationShipDTO.getBankCodeType())) {
-            if (isNullOrEmpty(achRelationShipDTO.getCountry()) ||
-                    isNullOrEmpty(achRelationShipDTO.getStateProvince()) ||
-                    isNullOrEmpty(achRelationShipDTO.getPostalCode()) ||
-                    achRelationShipDTO.getPostalCode().length() < 3 ||
-                    isNullOrEmpty(achRelationShipDTO.getCity()) ||
-                    isNullOrEmpty(achRelationShipDTO.getStreetAddress())) {
-
-                throw new IllegalArgumentException("❌ Los campos de dirección internacional son requeridos cuando el bank_code_type es BIC.");
-            }
-        }
-
-        String url = API_URL.replace("{account_id}", accountId);
+        validateCharacters(achRelationShipDTO);
 
         try {
-            String json = objectMapper.writeValueAsString(achRelationShipDTO);
-            RequestBody body = RequestBody.create(json, MediaType.parse("application/json; charset=utf-8"));
+            ResponseACHDTO responseDTO = callAlpacaCreateACHApi(achRelationShipDTO, accountId);
 
-            String credentials = apiKey + ":" + apiSecret;
-            String base64Credentials = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+            ACHRelationShip achRelationShip = modelMapper.map(responseDTO, ACHRelationShip.class);
+            achRelationShip.setAchId(responseDTO.getId());
+            achRelationShip.setAccountId(responseDTO.getAccountId());
 
-            Request request = new Request.Builder()
-                    .url(url)
-                    .post(body)
-                    .addHeader("Content-Type", "application/json")
-                    .addHeader("Authorization", "Basic " + base64Credentials)
-                    .build();
-
-            try (Response response = client.newCall(request).execute()) {
-                if (response.body() == null) {
-                    throw new RuntimeException("Respuesta vacía desde Alpaca.");
-                }
-
-                String responseBody = response.body().string();
-
-                if (response.isSuccessful()) {
-                    ResponseACHDTO responseDTO = objectMapper.readValue(responseBody, ResponseACHDTO.class);
-
-                    ACHRelationShip achRelationShip = modelMapper.map(responseDTO, ACHRelationShip.class);
-                    achRelationShip.setAchId(responseDTO.getId());
-
-                    achRepository.save(achRelationShip);
-
-                    System.out.println("✅ Cuenta bancaria creada exitosamente con ID: " + responseDTO.getId());
-                    return responseDTO;
-
-                } else {
-                    System.err.println("❌ Error HTTP " + response.code());
-                    System.err.println("🔹 Respuesta de error: " + responseBody);
-                    throw new RuntimeException("Fallo al crear la relación bancaria en Alpaca");
-                }
-            }
+            achRepository.save(achRelationShip);
+            return responseDTO;
 
         } catch (IOException e) {
-            throw new RuntimeException("❌ Error al comunicarse con Alpaca API", e);
+            throw new ACHBadRequestException("Error al comunicarse con la API de Alpaca");
         }
     }
 
-    private boolean isNullOrEmpty(String value) {
-        return value == null || value.trim().isEmpty();
+    private ResponseACHDTO callAlpacaCreateACHApi(ACHRelationShipDTO dto, String accountId) throws IOException {
+        String url = API_URL.replace("{account_id}", accountId);
+        String json = objectMapper.writeValueAsString(dto);
+
+        RequestBody body = RequestBody.create(json, MediaType.parse("application/json; charset=utf-8"));
+        String credentials = apiKey + ":" + apiSecret;
+        String base64Credentials = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+
+        Request request = new Request.Builder()
+                .url(url)
+                .post(body)
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Authorization", "Basic " + base64Credentials)
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            String responseBody = response.body() != null ? response.body().string() : "";
+
+            if (response.isSuccessful()) {
+                return objectMapper.readValue(responseBody, ResponseACHDTO.class);
+            }
+
+            switch (response.code()) {
+                case 400 -> throw new ACHBadRequestException("Solicitud inválida. Verifica los datos enviados.");
+                case 409 -> throw new ACHConflictException("Ya existe una relación bancaria para esta cuenta.");
+                default -> throw new ACHBadRequestException("Fallo al crear la relación bancaria en Alpaca.");
+            }
+        }
     }
 
+    private void validateCharacters(ACHRelationShipDTO dto) {
+        String allowedPattern = "^[A-Za-z0-9 !'()*+,.\\-/:;?=]*$";
+        String[] fieldsToValidate = {
+                dto.getName(), dto.getBankCode(), dto.getBankCodeType(), dto.getAccountNumber(),
+                dto.getCountry(), dto.getStateProvince(), dto.getPostalCode(), dto.getCity(), dto.getStreetAddress()
+        };
+        String[] fieldNames = {
+                "name", "bank_code", "bank_code_type", "account_number",
+                "country", "state_province", "postal_code", "city", "street_address"
+        };
+
+        for (int i = 0; i < fieldsToValidate.length; i++) {
+            String value = fieldsToValidate[i];
+            if (value != null && !value.matches(allowedPattern)) {
+                throw new ACHBadRequestException("El campo '" + fieldNames[i] +
+                        "' contiene caracteres inválidos. Solo se permiten: A-Z a-z 0-9 y símbolos ! ' ( ) * + , - . / : ; ? = [espacio]");
+            }
+        }
+    }
 }

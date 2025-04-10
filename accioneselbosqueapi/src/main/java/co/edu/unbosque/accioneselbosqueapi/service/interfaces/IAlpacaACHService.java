@@ -4,6 +4,6 @@ import co.edu.unbosque.accioneselbosqueapi.model.DTO.ResponseACHDTO;
 
 public interface IAlpacaACHService<T, K>{
 
-    ResponseACHDTO create(T achRelationShipDTO, String accountId);
+    ResponseACHDTO create(T achRelationShipDTO, K accountId);
 
 }

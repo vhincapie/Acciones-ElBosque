@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class AlpacaACHController implements IAlpacaACH {
 
-    private final IAlpacaACHService<ACHRelationShipDTO, Integer> alpacaACHService;
+    private final IAlpacaACHService<ACHRelationShipDTO, String> alpacaACHService;
 
-    public AlpacaACHController(IAlpacaACHService<ACHRelationShipDTO, Integer> alpacaACHService) {
+    public AlpacaACHController(IAlpacaACHService<ACHRelationShipDTO, String> alpacaACHService) {
         this.alpacaACHService = alpacaACHService;
     }
 

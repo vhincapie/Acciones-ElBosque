@@ -14,17 +14,8 @@ public class ACHRelationShip {
     @Column(name = "ach_id")
     private String achId;
 
-    @Column(name = "created_at")
-    private String createdAt;
-
-    @Column(name = "updated_at")
-    private String updatedAt;
-
     @Column(name = "account_id")
     private String accountId;
-
-    @Column(name = "status")
-    private String status;
 
     @Column(name = "name")
     private String name;
@@ -57,12 +48,9 @@ public class ACHRelationShip {
 
     }
 
-    public ACHRelationShip(String achId, String createdAt, String updatedAt, String accountId, String status, String name, String bankCode, String bankCodeType, String country, String stateProvince, String postalCode, String city, String streetAddress, String accountNumber) {
+    public ACHRelationShip(String achId, String accountId, String name, String bankCode, String bankCodeType, String country, String stateProvince, String postalCode, String city, String streetAddress, String accountNumber) {
         this.achId = achId;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
         this.accountId = accountId;
-        this.status = status;
         this.name = name;
         this.bankCode = bankCode;
         this.bankCodeType = bankCodeType;
@@ -91,36 +79,12 @@ public class ACHRelationShip {
         this.achId = achId;
     }
 
-    public String getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(String createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public String getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(String updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
     public String getAccountId() {
         return accountId;
     }
 
     public void setAccountId(String accountId) {
         this.accountId = accountId;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 
     public String getName() {
