@@ -21,7 +21,7 @@ public class StockDTO {
         this.previousClosePrice = previousClosePrice;
     }
 
-    // Getters y setters
+
     public String getSymbol() {
         return symbol;
     }

@@ -2,6 +2,7 @@ package co.edu.unbosque.accioneselbosqueapi.service.implementations;
 
 import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.*;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.StockDTO;
+import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IMarketService;
 import co.edu.unbosque.accioneselbosqueapi.websocket.StockWebSocketHandler;
 import org.json.JSONArray;
@@ -24,13 +25,13 @@ public class MarketService implements IMarketService {
     private String apiKey;
     private static final String FINNHUB_URL = "https://finnhub.io/api/v1/quote?symbol={symbol}&token=";
     private static final String SYMBOL_LOOKUP_URL = "https://finnhub.io/api/v1/stock/symbol?exchange=US&token=";
-    private static final String SYMBOLS[] = {"AAPL", "TSLA", "GOOG", "AMZN", "MSFT"};
-
     private final StockWebSocketHandler webSocketHandler;
+    private final UserService userService;
 
     @Autowired
-    public MarketService(StockWebSocketHandler webSocketHandler) {
+    public MarketService(StockWebSocketHandler webSocketHandler, UserService userService) {
         this.webSocketHandler = webSocketHandler;
+        this.userService = userService;
     }
 
 
@@ -63,13 +64,15 @@ public class MarketService implements IMarketService {
         }
     }
 
-    @Scheduled(fixedRate = 60000)
     @Override
     public List<StockDTO> getRelevantStocks() {
+        User usuario = userService.getAuthenticatedUserEntity();
+        String nombreMercado = usuario.getMercadoInteres().getNombre();
+        String[] symbols = obtenerSimbolosPorMercado(nombreMercado);
         List<StockDTO> stocks = new ArrayList<>();
         RestTemplate restTemplate = new RestTemplate();
 
-        for (String symbol : SYMBOLS) {
+        for (String symbol : symbols) {
             try {
                 String url = FINNHUB_URL + apiKey;
                 String response = restTemplate.getForObject(url, String.class, symbol);
@@ -130,6 +133,25 @@ public class MarketService implements IMarketService {
             throw new MarketServiceUnavailableException("Error al validar simbolo en mercado de EE.UU.: " + e.getMessage());
         }
     }
+
+    private String[] obtenerSimbolosPorMercado(String mercado) {
+        return switch (mercado.toLowerCase()) {
+            case "tecnología" -> new String[]{"AAPL", "MSFT", "GOOG", "NVDA"};
+            case "salud" -> new String[]{"JNJ", "PFE", "MRK"};
+            case "finanzas" -> new String[]{"JPM", "BAC", "C"};
+            case "consumo discrecional" -> new String[]{"HD", "MCD", "NKE"};
+            case "consumo básico" -> new String[]{"PG", "KO", "WMT"};
+            case "energía" -> new String[]{"XOM", "CVX", "SLB"};
+            case "industriales" -> new String[]{"HON", "UNP", "UPS"};
+            case "materiales" -> new String[]{"LIN", "APD", "ECL"};
+            case "servicios públicos" -> new String[]{"NEE", "DUK", "SO"};
+            case "bienes raíces" -> new String[]{"PLD", "AMT", "CCI"};
+            case "telecomunicaciones" -> new String[]{"VZ", "T", "TMUS"};
+            default -> new String[]{"AAPL"};
+        };
+    }
+
+
 
 
 
