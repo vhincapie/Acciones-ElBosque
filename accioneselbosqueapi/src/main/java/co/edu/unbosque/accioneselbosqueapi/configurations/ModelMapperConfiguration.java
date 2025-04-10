@@ -43,7 +43,7 @@ public class ModelMapperConfiguration {
                 });
 
         modelMapper.createTypeMap(CreateAccountRequestDTO.class, AlpacaAccountRequestDTO.class)
-                .addMappings(mapper -> mapper.skip(AlpacaAccountRequestDTO::setEnabledAssets)); // Solo si no lo tienes en el original
+                .addMappings(mapper -> mapper.skip(AlpacaAccountRequestDTO::setEnabledAssets));
 
 
     }

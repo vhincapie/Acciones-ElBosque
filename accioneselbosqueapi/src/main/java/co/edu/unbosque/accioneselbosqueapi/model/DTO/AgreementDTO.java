@@ -19,7 +19,7 @@ public class AgreementDTO {
 
     public AgreementDTO(String agreement, LocalDateTime signedAt, String ipAddress) {
         this.agreement = agreement;
-        this.signedAt = signedAt.format(DateTimeFormatter.ISO_DATE_TIME) + "Z"; // ✅ Correcto aquí
+        this.signedAt = signedAt.format(DateTimeFormatter.ISO_DATE_TIME) + "Z";
         this.ipAddress = ipAddress;
     }
 

@@ -40,8 +40,8 @@ public class SecurityConfig {
                 )
                 .formLogin(form -> form
                         .loginProcessingUrl("/api/auth/login")
-                        .successHandler(loginSuccessHandler)  // Asignando el LoginSuccessHandler
-                        .failureHandler(loginFailureHandler)  // Asignando el LoginFailureHandler
+                        .successHandler(loginSuccessHandler)
+                        .failureHandler(loginFailureHandler)
                         .permitAll()
                 )
                 .logout(logout -> logout

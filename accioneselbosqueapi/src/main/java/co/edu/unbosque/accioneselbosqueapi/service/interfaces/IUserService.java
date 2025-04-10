@@ -13,6 +13,5 @@ public interface IUserService {
     void resetPassword(String token, String newPassword);
     UserDetails loadUserByUsername(String username) throws UsernameNotFoundException;
     UserDTO getAuthenticatedUserInfo();
-
     User getAuthenticatedUserEntity();
 }

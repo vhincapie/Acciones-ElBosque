@@ -21,19 +21,43 @@ public class AlpacaAccountUserResponseDTO {
     }
 
 
+    public String getAlpacaId() {
+        return alpacaId;
+    }
 
-    public String getAlpacaId() { return alpacaId; }
-    public void setAlpacaId(String alpacaId) { this.alpacaId = alpacaId; }
+    public void setAlpacaId(String alpacaId) {
+        this.alpacaId = alpacaId;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public String getStatus() {
+        return status;
+    }
 
-    public String getCurrency() { return currency; }
-    public void setCurrency(String currency) { this.currency = currency; }
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
-    public String getAccountType() { return accountType; }
-    public void setAccountType(String accountType) { this.accountType = accountType; }
+    public String getCurrency() {
+        return currency;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public String getAccountType() {
+        return accountType;
+    }
+
+    public void setAccountType(String accountType) {
+        this.accountType = accountType;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

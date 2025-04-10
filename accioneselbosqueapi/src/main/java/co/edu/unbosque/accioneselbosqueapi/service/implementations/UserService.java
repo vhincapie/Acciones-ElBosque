@@ -7,7 +7,7 @@ import co.edu.unbosque.accioneselbosqueapi.model.entity.MarketInterest;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
 import co.edu.unbosque.accioneselbosqueapi.repository.IUserRepository;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IAlpacaService;
-import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IMarketInterestRepository;
+import co.edu.unbosque.accioneselbosqueapi.repository.IMarketInterestRepository;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.Authentication;
