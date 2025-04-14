@@ -1,12 +1,9 @@
 package co.edu.unbosque.accioneselbosqueapi.configurations;
 
-import co.edu.unbosque.accioneselbosqueapi.model.DTO.AlpacaAccountRequestDTO;
-import co.edu.unbosque.accioneselbosqueapi.model.DTO.CreateAccountRequestDTO;
-import co.edu.unbosque.accioneselbosqueapi.model.DTO.UserDTO;
-import co.edu.unbosque.accioneselbosqueapi.model.DTO.WatchlistItemDTO;
-import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
-import co.edu.unbosque.accioneselbosqueapi.model.entity.WatchlistItem;
+import co.edu.unbosque.accioneselbosqueapi.model.DTO.*;
+import co.edu.unbosque.accioneselbosqueapi.model.entity.*;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeMap;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -45,7 +42,36 @@ public class ModelMapperConfiguration {
         modelMapper.createTypeMap(CreateAccountRequestDTO.class, AlpacaAccountRequestDTO.class)
                 .addMappings(mapper -> mapper.skip(AlpacaAccountRequestDTO::setEnabledAssets));
 
+        // Mapeo para AccountACHRelationShip
+        TypeMap<ResponseAccountACHDTO, AccountACHRelationShip> accountACHMap =
+                modelMapper.createTypeMap(ResponseAccountACHDTO.class, AccountACHRelationShip.class);
 
+        accountACHMap.addMappings(m -> {
+            m.map(ResponseAccountACHDTO::getId, AccountACHRelationShip::setAchId);
+            m.map(ResponseAccountACHDTO::getAccountOwnerName, AccountACHRelationShip::setAccountOwnerName);
+            m.map(ResponseAccountACHDTO::getBankAccountType, AccountACHRelationShip::setBankAccountType);
+            m.map(ResponseAccountACHDTO::getBankAccountNumber, AccountACHRelationShip::setBankAccountNumber);
+            m.map(ResponseAccountACHDTO::getNickname, AccountACHRelationShip::setNickname);
+
+            m.skip(AccountACHRelationShip::setId);
+        });
+
+        // Mapeo para Transfer
+        TypeMap<ResponseTransferDTO, Transfer> transferMap = modelMapper.createTypeMap(ResponseTransferDTO.class, Transfer.class);
+        transferMap.addMappings(m -> {
+            m.map(ResponseTransferDTO::getType, Transfer::setType);
+            m.map(ResponseTransferDTO::getAmount, Transfer::setAmount);
+            m.map(ResponseTransferDTO::getCurrency, Transfer::setCurrency);
+            m.skip(Transfer::setId);
+        });
+
+        // Mapeo para Order
+        TypeMap<OrderResponseDTO, Order> orderMap = modelMapper.createTypeMap(OrderResponseDTO.class, Order.class);
+        orderMap.addMappings(m -> {
+            m.skip(Order::setId);
+            m.skip(Order::setTransactionAmount);
+            m.skip(Order::setCommissionAmount);
+            m.skip(Order::setNetAmount);
+        });
     }
-
 }

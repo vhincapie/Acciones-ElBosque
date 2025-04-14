@@ -5,7 +5,10 @@ import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.ACHConflictExce
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.AccountACHRelationShipDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.ResponseAccountACHDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.AccountACHRelationShip;
+import co.edu.unbosque.accioneselbosqueapi.model.entity.AlpacaAccount;
+import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
 import co.edu.unbosque.accioneselbosqueapi.repository.AccountACHRepository;
+import co.edu.unbosque.accioneselbosqueapi.repository.IAlpacaAccountRepository;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IAccountACHService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
@@ -15,45 +18,59 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.Base64;
 
 @Service
-public class AccountACHService implements IAccountACHService<AccountACHRelationShipDTO, String> {
+public class AccountACHService implements IAccountACHService<AccountACHRelationShipDTO> {
 
-    @Value("${alpaca.api-key}")
+    @Value("${alpaca.broker.api.key}")
     private String apiKey;
 
-    @Value("${alpaca.api-secret}")
+    @Value("${alpaca.broker.api.secret}")
     private String apiSecret;
 
     private static final String API_URL = "https://broker-api.sandbox.alpaca.markets/v1/accounts/{account_id}/ach_relationships";
 
     private final OkHttpClient client;
     private final AccountACHRepository achRepository;
+    private final IAlpacaAccountRepository alpacaAccountRepository;
+    private final UserService userService;
     private final ModelMapper modelMapper;
     private final ObjectMapper objectMapper;
 
-    public AccountACHService(OkHttpClient client, AccountACHRepository achRepository, ModelMapper modelMapper, ObjectMapper objectMapper) {
+    public AccountACHService(OkHttpClient client, AccountACHRepository achRepository, IAlpacaAccountRepository alpacaAccountRepository, UserService userService, ModelMapper modelMapper, ObjectMapper objectMapper) {
         this.client = client;
         this.achRepository = achRepository;
+        this.alpacaAccountRepository = alpacaAccountRepository;
+        this.userService = userService;
         this.modelMapper = modelMapper;
         this.objectMapper = objectMapper;
     }
 
     @Override
-    public ResponseAccountACHDTO create(AccountACHRelationShipDTO accountACHRelationShipDTO, String accountId) {
-        if (accountId == null || accountId.trim().isEmpty()) {
-            throw new ACHBadRequestException("El accountId no puede ser nulo o vacío");
-        }
+    public ResponseAccountACHDTO create(AccountACHRelationShipDTO dto) {
+        // Obtener el usuario autenticado
+        User usuario = userService.getAuthenticatedUserEntity();
 
-        validateCharacters(accountACHRelationShipDTO);
+        // Buscar la cuenta Alpaca asociada al usuario
+        AlpacaAccount alpacaAccount = alpacaAccountRepository.findByUserId(usuario.getId())
+                .orElseThrow(() -> new ACHBadRequestException("No se encontró la cuenta Alpaca asociada al usuario."));
+
+        // Obtener el ID generado por Alpaca (UUID tipo String)
+        String alpacaId = alpacaAccount.getAlpacaId();
+
+        validateCharacters(dto);
 
         try {
-            ResponseAccountACHDTO responseDTO = callAlpacaCreateACHApi(accountACHRelationShipDTO, accountId);
+            // Llamada a la API externa de Alpaca
+            ResponseAccountACHDTO responseDTO = callAlpacaCreateACHApi(dto, alpacaId);
 
+            // Mapear y guardar en base de datos
             AccountACHRelationShip ach = modelMapper.map(responseDTO, AccountACHRelationShip.class);
             ach.setAchId(responseDTO.getId());
-            ach.setAccountId(responseDTO.getAccountId());
+            ach.setAlpacaAccount(alpacaAccount);
+            ach.setCreatedAt(LocalDateTime.now());
 
             achRepository.save(ach);
             return responseDTO;

@@ -9,5 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface IAlpacaAccountRepository extends JpaRepository<AlpacaAccount, Long> {
+
     Optional<AlpacaAccount> findByUser(User user);
+    Optional<AlpacaAccount> findByUserId(Long userId);
 }

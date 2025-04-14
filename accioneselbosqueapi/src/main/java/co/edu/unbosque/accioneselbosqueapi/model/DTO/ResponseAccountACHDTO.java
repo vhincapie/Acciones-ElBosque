@@ -1,7 +1,9 @@
 package co.edu.unbosque.accioneselbosqueapi.model.DTO;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ResponseAccountACHDTO {
 
     @JsonProperty("id")
@@ -9,9 +11,6 @@ public class ResponseAccountACHDTO {
 
     @JsonProperty("created_at")
     private String createdAt;
-
-    @JsonProperty("updated_at")
-    private String updatedAt;
 
     @JsonProperty("account_id")
     private String accountId;
@@ -28,32 +27,24 @@ public class ResponseAccountACHDTO {
     @JsonProperty("bank_account_number")
     private String bankAccountNumber;
 
-    @JsonProperty("bank_routing_number")
-    private String bankRoutingNumber;
-
     @JsonProperty("nickname")
     private String nickname;
 
     public ResponseAccountACHDTO() {
     }
 
-    public ResponseAccountACHDTO(String id, String createdAt, String updatedAt, String accountId, String status,
-                                 String accountOwnerName, String bankAccountType, String bankAccountNumber,
-                                 String bankRoutingNumber, String nickname) {
+    public ResponseAccountACHDTO(String id, String createdAt, String accountId, String status, String accountOwnerName, String bankAccountType, String bankAccountNumber, String nickname) {
         this.id = id;
         this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
         this.accountId = accountId;
         this.status = status;
         this.accountOwnerName = accountOwnerName;
         this.bankAccountType = bankAccountType;
         this.bankAccountNumber = bankAccountNumber;
-        this.bankRoutingNumber = bankRoutingNumber;
         this.nickname = nickname;
     }
 
     // Getters y Setters
-
     public String getId() {
         return id;
     }
@@ -68,14 +59,6 @@ public class ResponseAccountACHDTO {
 
     public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
-    }
-
-    public String getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(String updatedAt) {
-        this.updatedAt = updatedAt;
     }
 
     public String getAccountId() {
@@ -116,14 +99,6 @@ public class ResponseAccountACHDTO {
 
     public void setBankAccountNumber(String bankAccountNumber) {
         this.bankAccountNumber = bankAccountNumber;
-    }
-
-    public String getBankRoutingNumber() {
-        return bankRoutingNumber;
-    }
-
-    public void setBankRoutingNumber(String bankRoutingNumber) {
-        this.bankRoutingNumber = bankRoutingNumber;
     }
 
     public String getNickname() {
