@@ -94,11 +94,11 @@ public class ModelMapperConfiguration {
         // UserSubscriptionDTO <-> UserSubscription
         modelMapper.createTypeMap(UserSubscriptionDTO.class, UserSubscription.class)
                 .addMappings(mapper -> mapper.skip(UserSubscription::setUser));
+
         // Mapeo para AccountACHRelationShip
         TypeMap<ResponseAccountACHDTO, AccountACHRelationShip> accountACHMap =
                 modelMapper.createTypeMap(ResponseAccountACHDTO.class, AccountACHRelationShip.class);
 
-    }
         accountACHMap.addMappings(m -> {
             m.map(ResponseAccountACHDTO::getId, AccountACHRelationShip::setAchId);
             m.map(ResponseAccountACHDTO::getAccountOwnerName, AccountACHRelationShip::setAccountOwnerName);
