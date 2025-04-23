@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 public interface IUserAPI {
 
-
     @PostMapping("/register")
     ResponseEntity<?> register(@RequestBody CreateAccountRequestDTO request);
 

@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ModelMapperConfiguration {
 
+
     @Bean
     public ModelMapper modelMapper() {
         ModelMapper modelMapper = new ModelMapper();
@@ -93,6 +94,37 @@ public class ModelMapperConfiguration {
         // UserSubscriptionDTO <-> UserSubscription
         modelMapper.createTypeMap(UserSubscriptionDTO.class, UserSubscription.class)
                 .addMappings(mapper -> mapper.skip(UserSubscription::setUser));
+        // Mapeo para AccountACHRelationShip
+        TypeMap<ResponseAccountACHDTO, AccountACHRelationShip> accountACHMap =
+                modelMapper.createTypeMap(ResponseAccountACHDTO.class, AccountACHRelationShip.class);
 
+    }
+        accountACHMap.addMappings(m -> {
+            m.map(ResponseAccountACHDTO::getId, AccountACHRelationShip::setAchId);
+            m.map(ResponseAccountACHDTO::getAccountOwnerName, AccountACHRelationShip::setAccountOwnerName);
+            m.map(ResponseAccountACHDTO::getBankAccountType, AccountACHRelationShip::setBankAccountType);
+            m.map(ResponseAccountACHDTO::getBankAccountNumber, AccountACHRelationShip::setBankAccountNumber);
+            m.map(ResponseAccountACHDTO::getNickname, AccountACHRelationShip::setNickname);
+
+            m.skip(AccountACHRelationShip::setId);
+        });
+
+        // Mapeo para Transfer
+        TypeMap<ResponseTransferDTO, Transfer> transferMap = modelMapper.createTypeMap(ResponseTransferDTO.class, Transfer.class);
+        transferMap.addMappings(m -> {
+            m.map(ResponseTransferDTO::getType, Transfer::setType);
+            m.map(ResponseTransferDTO::getAmount, Transfer::setAmount);
+            m.map(ResponseTransferDTO::getCurrency, Transfer::setCurrency);
+            m.skip(Transfer::setId);
+        });
+
+        // Mapeo para Order
+        TypeMap<OrderResponseDTO, Order> orderMap = modelMapper.createTypeMap(OrderResponseDTO.class, Order.class);
+        orderMap.addMappings(m -> {
+            m.skip(Order::setId);
+            m.skip(Order::setTransactionAmount);
+            m.skip(Order::setCommissionAmount);
+            m.skip(Order::setNetAmount);
+        });
     }
 }
