@@ -12,9 +12,7 @@ import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
 import co.edu.unbosque.accioneselbosqueapi.repository.IAlpacaAccountRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.IUserRepository;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IAlpacaService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -39,10 +37,12 @@ public class AlpacaService implements IAlpacaService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final IAlpacaAccountRepository alpacaAccountRepository;
     private final IUserRepository userRepository;
+    private final ModelMapper modelMapper;
 
-    public AlpacaService(IAlpacaAccountRepository alpacaAccountRepository, IUserRepository userRepository) {
+    public AlpacaService(IAlpacaAccountRepository alpacaAccountRepository, IUserRepository userRepository, ModelMapper modelMapper) {
         this.alpacaAccountRepository = alpacaAccountRepository;
         this.userRepository = userRepository;
+        this.modelMapper = modelMapper;
     }
 
     @Override
@@ -82,16 +82,13 @@ public class AlpacaService implements IAlpacaService {
         }
     }
 
-@Override
+    @Override
     public void guardarCuentaAlpaca(AlpacaAccountResponseDTO dto, Long idUsuario) {
         User usuario = userRepository.findById(idUsuario)
                 .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado"));
 
-        AlpacaAccount cuenta = new AlpacaAccount();
+        AlpacaAccount cuenta = modelMapper.map(dto, AlpacaAccount.class);
         cuenta.setAlpacaId(dto.getId());
-        cuenta.setStatus(dto.getStatus());
-        cuenta.setCurrency(dto.getCurrency());
-        cuenta.setAccountType(dto.getAccountType());
         cuenta.setUser(usuario);
         cuenta.setCreatedAt(LocalDateTime.now());
 
@@ -106,14 +103,6 @@ public class AlpacaService implements IAlpacaService {
         AlpacaAccount cuenta = alpacaAccountRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("No se encontró una cuenta Alpaca asociada"));
 
-        return new AlpacaAccountUserResponseDTO(
-                cuenta.getAlpacaId(),
-                cuenta.getStatus(),
-                cuenta.getCurrency(),
-                cuenta.getAccountType(),
-                cuenta.getCreatedAt()
-        );
+        return modelMapper.map(cuenta, AlpacaAccountUserResponseDTO.class);
     }
-
-
 }

@@ -5,6 +5,7 @@ import co.edu.unbosque.accioneselbosqueapi.model.DTO.AlpacaAccountUserResponseDT
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.CreateAccountRequestDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.LoginRequestDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.UserDTO;
+import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IAlpacaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,7 @@ public class UserController implements IUserAPI {
 
     private final IUserService userService;
     private final IAlpacaService alpacaService;
+
     @Autowired
     private AuthenticationManager authenticationManager;
 
@@ -32,30 +34,28 @@ public class UserController implements IUserAPI {
     }
 
     @Override
-    public ResponseEntity<?> register(@RequestBody CreateAccountRequestDTO request) {
-        userService.register(request);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body("Usuario registrado exitosamente y cuenta Alpaca creada");
+    public ResponseEntity<UserDTO> register(@RequestBody CreateAccountRequestDTO request) {
+        UserDTO created = userService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @Override
     public ResponseEntity<String> recoverPassword(String email) {
         userService.sendRecoveryEmail(email);
-        return ResponseEntity.ok("Se ha enviado un correo con instrucciones para recuperar la contraseña");
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Override
-    public ResponseEntity<String> resetPassword(String token, String newPassword) {
-        userService.resetPassword(token, newPassword);
-        return ResponseEntity.ok("Contraseña actualizada correctamente");
+    public ResponseEntity<UserDTO> resetPassword(String token, String newPassword){
+    UserDTO updated = userService.resetPassword(token, newPassword);
+        return ResponseEntity.ok(updated);
     }
 
     @PreAuthorize("hasAnyRole('INVERSIONISTA', 'COMISIONISTA', 'ADMINISTRADOR')")
     @Override
     public ResponseEntity<UserDTO> getAuthenticatedUserInfo() {
         UserDTO userInfo = userService.getAuthenticatedUserInfo();
-        return ResponseEntity.ok(userInfo);
+        return ResponseEntity.status(HttpStatus.OK).body(userInfo);
     }
 
     @PreAuthorize("hasAnyRole('INVERSIONISTA', 'COMISIONISTA', 'ADMINISTRADOR')")
@@ -64,7 +64,7 @@ public class UserController implements IUserAPI {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         AlpacaAccountUserResponseDTO response = alpacaService.obtenerCuentaPorUsuario(username);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @Override
@@ -73,13 +73,10 @@ public class UserController implements IUserAPI {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
-
             SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            return ResponseEntity.ok("Inicio de sesión exitoso");
-
+            return ResponseEntity.status(HttpStatus.OK).build();
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
 }

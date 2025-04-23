@@ -18,7 +18,7 @@ public interface IUserAPI {
     ResponseEntity<String> recoverPassword(@RequestParam String email);
 
     @PostMapping("/reset-password")
-    ResponseEntity<String> resetPassword(@RequestParam String token, @RequestParam String newPassword);
+    ResponseEntity<UserDTO> resetPassword(@RequestParam String token, @RequestParam String newPassword);
 
     @GetMapping("/panel")
     ResponseEntity<UserDTO> getAuthenticatedUserInfo();

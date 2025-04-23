@@ -5,6 +5,7 @@ import co.edu.unbosque.accioneselbosqueapi.model.DTO.AlpacaAccountUserResponseDT
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.CreateAccountRequestDTO;
 
 public interface IAlpacaService {
+
     AlpacaAccountResponseDTO crearCuenta(CreateAccountRequestDTO request);
     void guardarCuentaAlpaca(AlpacaAccountResponseDTO dto, Long idUsuario);
     AlpacaAccountUserResponseDTO obtenerCuentaPorUsuario(String username);

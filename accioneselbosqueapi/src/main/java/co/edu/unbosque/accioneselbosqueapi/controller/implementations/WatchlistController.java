@@ -25,7 +25,8 @@ public class WatchlistController implements IWatchlistAPI {
 
     @Override
     public ResponseEntity<List<WatchlistItemDTO>> findAll() {
-        return ResponseEntity.status(HttpStatus.OK).body(watchlistService.findAll());
+        List<WatchlistItemDTO> result = watchlistService.findAll();
+        return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 
     @Override
@@ -49,6 +50,7 @@ public class WatchlistController implements IWatchlistAPI {
     @Override
     public ResponseEntity<String> updateAlertPrices(Long id, Double min, Double max) {
         watchlistService.updateAlertPrices(id, min, max);
-        return ResponseEntity.status(HttpStatus.OK).body("Precios de alerta actualizados.");
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
+
 }

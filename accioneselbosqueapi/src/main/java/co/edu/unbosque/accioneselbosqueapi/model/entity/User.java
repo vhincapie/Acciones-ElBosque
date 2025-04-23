@@ -46,10 +46,12 @@ public class User {
     @JoinColumn(name = "id_mercado")
     private MarketInterest mercadoInteres;
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserSubscription subscription;
 
     public User() {}
 
-    public User(Long id, String username, String password, String email, String nombre, Rol role, SubrolAdministrador subrole, boolean bloqueado, int intentosFallidos, String resetToken, MarketInterest mercadoInteres) {
+    public User(Long id, String username, String password, String email, String nombre, Rol role, SubrolAdministrador subrole, boolean bloqueado, int intentosFallidos, String resetToken, MarketInterest mercadoInteres, UserSubscription subscription) {
         this.id = id;
         this.username = username;
         this.password = password;
@@ -61,6 +63,7 @@ public class User {
         this.intentosFallidos = intentosFallidos;
         this.resetToken = resetToken;
         this.mercadoInteres = mercadoInteres;
+        this.subscription = subscription;
     }
 
     // Getters y Setters
@@ -151,5 +154,13 @@ public class User {
 
     public void setMercadoInteres(MarketInterest mercadoInteres) {
         this.mercadoInteres = mercadoInteres;
+    }
+
+    public UserSubscription getSubscription() {
+        return subscription;
+    }
+
+    public void setSubscription(UserSubscription subscription) {
+        this.subscription = subscription;
     }
 }

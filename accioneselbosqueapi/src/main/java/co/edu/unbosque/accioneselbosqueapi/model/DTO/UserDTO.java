@@ -15,12 +15,12 @@ public class UserDTO {
     private boolean bloqueado;
     private int intentosFallidos;
     private String resetToken;
+    private MarketInterestDTO marketInterestDTO;
+    private UserSubscriptionDTO subscription;
 
     public UserDTO() {}
 
-    public UserDTO(Long id, String username, String email, String password, String nombre,
-                   Rol role, SubrolAdministrador subrole, boolean bloqueado,
-                   int intentosFallidos, String resetToken) {
+    public UserDTO(Long id, String username, String email, String password, String nombre, Rol role, SubrolAdministrador subrole, boolean bloqueado, int intentosFallidos, String resetToken, MarketInterestDTO marketInterestDTO, UserSubscriptionDTO subscription) {
         this.id = id;
         this.username = username;
         this.email = email;
@@ -31,6 +31,8 @@ public class UserDTO {
         this.bloqueado = bloqueado;
         this.intentosFallidos = intentosFallidos;
         this.resetToken = resetToken;
+        this.marketInterestDTO = marketInterestDTO;
+        this.subscription = subscription;
     }
 
     public Long getId() {
@@ -111,5 +113,21 @@ public class UserDTO {
 
     public void setResetToken(String resetToken) {
         this.resetToken = resetToken;
+    }
+
+    public MarketInterestDTO getMarketInterestDTO() {
+        return marketInterestDTO;
+    }
+
+    public void setMarketInterestDTO(MarketInterestDTO marketInterestDTO) {
+        this.marketInterestDTO = marketInterestDTO;
+    }
+
+    public UserSubscriptionDTO getSubscription() {
+        return subscription;
+    }
+
+    public void setSubscription(UserSubscriptionDTO subscription) {
+        this.subscription = subscription;
     }
 }
