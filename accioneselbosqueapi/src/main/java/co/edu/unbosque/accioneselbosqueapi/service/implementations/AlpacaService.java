@@ -5,7 +5,6 @@ import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.AlpacaDuplicate
 import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.UsuarioNoEncontradoException;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.AlpacaAccountRequestDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.AlpacaAccountResponseDTO;
-import co.edu.unbosque.accioneselbosqueapi.model.DTO.AlpacaAccountUserResponseDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.CreateAccountRequestDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.AlpacaAccount;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
@@ -18,7 +17,6 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-
 import java.time.LocalDateTime;
 
 
@@ -95,14 +93,5 @@ public class AlpacaService implements IAlpacaService {
         alpacaAccountRepository.save(cuenta);
     }
 
-    @Override
-    public AlpacaAccountUserResponseDTO obtenerCuentaPorUsuario(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado"));
 
-        AlpacaAccount cuenta = alpacaAccountRepository.findByUser(user)
-                .orElseThrow(() -> new RuntimeException("No se encontró una cuenta Alpaca asociada"));
-
-        return modelMapper.map(cuenta, AlpacaAccountUserResponseDTO.class);
-    }
 }

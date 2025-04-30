@@ -1,5 +1,6 @@
 package co.edu.unbosque.accioneselbosqueapi.exceptions.handler;
 
+import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.UnauthorizedAccessException;
 import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.WatchlistBadRequestException;
 import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.WatchlistNotFoundException;
 import co.edu.unbosque.accioneselbosqueapi.model.BaseResponse;
@@ -21,5 +22,11 @@ public class WatchlistExceptionHandler {
     public ResponseEntity<BaseResponse> handleBadRequest(WatchlistBadRequestException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new BaseResponse(ex.getMessage(), HttpStatus.BAD_REQUEST.value()));
+    }
+
+    @ExceptionHandler(UnauthorizedAccessException.class)
+    public ResponseEntity<BaseResponse> handleUnauthorized(UnauthorizedAccessException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new BaseResponse(ex.getMessage(), HttpStatus.FORBIDDEN.value()));
     }
 }

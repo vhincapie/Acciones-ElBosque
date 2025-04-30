@@ -6,9 +6,8 @@ import com.stripe.exception.StripeException;
 public interface IUserSubscriptionService {
 
     String crearSesionCheckout(String tipoPlan) throws StripeException;
-    UserSubscriptionDTO activarSuscripcionDesdeWebhook(String email, String customerId, String subscriptionId, String tipoPlan);
+    UserSubscriptionDTO activarSuscripcionDesdeWebhook(String email, String tipoPlan);
     UserSubscriptionDTO verificarYActualizarEstado();
     boolean esUsuarioPremium();
-
 
 }

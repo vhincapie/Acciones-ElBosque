@@ -1,21 +1,23 @@
 package co.edu.unbosque.accioneselbosqueapi.model.DTO;
 
+
 import java.time.LocalDate;
 
 public class UserSubscriptionDTO {
 
     private Long id;
-    private UserDTO user;
+    private Long user;
     private String stripeCustomerId;
     private String stripeSubscriptionId;
     private boolean activo;
     private LocalDate fechaInicio;
     private LocalDate fechaCancelacion;
+    private String tipoPlan;
 
     public UserSubscriptionDTO() {
     }
 
-    public UserSubscriptionDTO(Long id, UserDTO user, String stripeCustomerId, String stripeSubscriptionId, boolean activo, LocalDate fechaInicio, LocalDate fechaCancelacion) {
+    public UserSubscriptionDTO(Long id, Long user, String stripeCustomerId, String stripeSubscriptionId, boolean activo, LocalDate fechaInicio, LocalDate fechaCancelacion, String tipoPlan) {
         this.id = id;
         this.user = user;
         this.stripeCustomerId = stripeCustomerId;
@@ -23,6 +25,7 @@ public class UserSubscriptionDTO {
         this.activo = activo;
         this.fechaInicio = fechaInicio;
         this.fechaCancelacion = fechaCancelacion;
+        this.tipoPlan = tipoPlan;
     }
 
     public Long getId() {
@@ -33,11 +36,11 @@ public class UserSubscriptionDTO {
         this.id = id;
     }
 
-    public UserDTO getUser() {
+    public Long getUser() {
         return user;
     }
 
-    public void setUser(UserDTO user) {
+    public void setUser(Long user) {
         this.user = user;
     }
 
@@ -79,5 +82,13 @@ public class UserSubscriptionDTO {
 
     public void setFechaCancelacion(LocalDate fechaCancelacion) {
         this.fechaCancelacion = fechaCancelacion;
+    }
+
+    public String getTipoPlan() {
+        return tipoPlan;
+    }
+
+    public void setTipoPlan(String tipoPlan) {
+        this.tipoPlan = tipoPlan;
     }
 }

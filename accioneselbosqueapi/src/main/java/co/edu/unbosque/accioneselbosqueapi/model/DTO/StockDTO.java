@@ -7,21 +7,21 @@ public class StockDTO {
     private double highPrice;
     private double lowPrice;
     private double previousClosePrice;
+    private Long timestamp;
 
-    public StockDTO() {
+    public StockDTO() {}
 
-    }
-
-    public StockDTO(String symbol, String description, double currentPrice, double highPrice, double lowPrice, double previousClosePrice) {
+    public StockDTO(String symbol, String description, double currentPrice, double highPrice, double lowPrice, double previousClosePrice, Long timestamp) {
         this.symbol = symbol;
         this.description = description;
         this.currentPrice = currentPrice;
         this.highPrice = highPrice;
         this.lowPrice = lowPrice;
         this.previousClosePrice = previousClosePrice;
+        this.timestamp = timestamp;
     }
 
-
+    // Getters y Setters
     public String getSymbol() {
         return symbol;
     }
@@ -68,5 +68,13 @@ public class StockDTO {
 
     public void setPreviousClosePrice(double previousClosePrice) {
         this.previousClosePrice = previousClosePrice;
+    }
+
+    public Long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Long timestamp) {
+        this.timestamp = timestamp;
     }
 }

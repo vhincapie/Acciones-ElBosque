@@ -1,6 +1,7 @@
 package co.edu.unbosque.accioneselbosqueapi.controller.implementations;
 
 import co.edu.unbosque.accioneselbosqueapi.controller.interfaces.IMarketAPI;
+import co.edu.unbosque.accioneselbosqueapi.model.DTO.MarketStatusDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.StockDTO;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IMarketService;
 import org.springframework.http.HttpStatus;
@@ -19,27 +20,18 @@ public class MarketController implements IMarketAPI {
         this.marketService = marketService;
     }
 
-    @Override
-    public ResponseEntity<StockDTO> findBySymbol(String symbol) {
-        StockDTO dto = marketService.findBySymbol(symbol);
-        return ResponseEntity
-                .status(HttpStatus.OK.value())
-                .body(dto);
-    }
-
     @PreAuthorize("hasRole('INVERSIONISTA')")
     @Override
     public ResponseEntity<List<StockDTO>> getRelevantStocks() {
         List<StockDTO> stockList = marketService.getRelevantStocks();
-        return ResponseEntity
-                .status(HttpStatus.OK.value())
-                .body(stockList);
+        return ResponseEntity.status(HttpStatus.OK.value()).body(stockList);
     }
 
- /*   @Override
-    public ResponseEntity<?> findAllSymbols() {
-        String allSymbols = marketService.findAllSymbols();
-        return ResponseEntity.ok(allSymbols);
-    }*/
+    @PreAuthorize("hasRole('INVERSIONISTA')")
+    @Override
+    public ResponseEntity<MarketStatusDTO> getMarketStatus() {
+        MarketStatusDTO status = marketService.getMarketStatus();
+        return ResponseEntity.ok(status);
+    }
 
 }

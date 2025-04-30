@@ -27,15 +27,22 @@ public class WatchlistItem {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @ManyToOne
+    @JoinColumn(name = "id_usuario")
+    private User user;
+
+
     public WatchlistItem() {
     }
 
-    public WatchlistItem(String symbol, String companyName, Double alertMinPrice, Double alertMaxPrice, LocalDateTime createdAt) {
+    public WatchlistItem(Long id, String symbol, String companyName, Double alertMinPrice, Double alertMaxPrice, LocalDateTime createdAt, User user) {
+        this.id = id;
         this.symbol = symbol;
         this.companyName = companyName;
         this.alertMinPrice = alertMinPrice;
         this.alertMaxPrice = alertMaxPrice;
         this.createdAt = createdAt;
+        this.user = user;
     }
 
     public Long getId() {
@@ -84,5 +91,13 @@ public class WatchlistItem {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

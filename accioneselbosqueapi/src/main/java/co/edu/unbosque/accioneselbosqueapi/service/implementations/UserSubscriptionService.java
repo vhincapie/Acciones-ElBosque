@@ -1,7 +1,6 @@
 package co.edu.unbosque.accioneselbosqueapi.service.implementations;
 
 import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.SuscripcionException;
-import co.edu.unbosque.accioneselbosqueapi.model.DTO.UserDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.UserSubscriptionDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.Rol;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
@@ -12,17 +11,14 @@ import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserSubscriptionS
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
-import com.stripe.model.Subscription;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserSubscriptionService implements IUserSubscriptionService {
@@ -55,15 +51,15 @@ public class UserSubscriptionService implements IUserSubscriptionService {
         UserSubscriptionDTO updatedSub = verificarYActualizarEstado();
 
         if (user.getRole() != Rol.INVERSIONISTA) {
-            throw new SuscripcionException("Solo los usuarios con rol INVERSIONISTA pueden adquirir una suscripción.");
+            throw new SuscripcionException("Solo los usuarios con rol INVERSIONISTA pueden adquirir una suscripcion.");
         }
         if (updatedSub != null && updatedSub.isActivo()) {
-            throw new SuscripcionException("Ya tienes una suscripción activa.");
+            throw new SuscripcionException("Ya tienes una suscripcion activa.");
         }
 
         Optional<UserSubscription> subOpt = subscriptionRepository.findByUser(user);
         if (subOpt.isPresent() && Boolean.TRUE.equals(subOpt.get().isActivo())) {
-            throw new SuscripcionException("Ya tienes una suscripción activa.");
+            throw new SuscripcionException("Ya tienes una suscripcion activa.");
         }
 
         Stripe.apiKey = stripeSecretKey;
@@ -71,9 +67,9 @@ public class UserSubscriptionService implements IUserSubscriptionService {
 
         SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
-                .setSuccessUrl("http://localhost:3000/success")
-                .setCancelUrl("http://localhost:3000/cancel")
-                .setCustomerEmail(user.getEmail())
+                .setSuccessUrl("http://localhost:5173/success")
+                .setCancelUrl("http://localhost:5173/cancel")
+                 .setCustomerEmail(user.getEmail())
                 .addLineItem(SessionCreateParams.LineItem.builder()
                         .setPrice(priceId)
                         .setQuantity(1L)
@@ -86,7 +82,7 @@ public class UserSubscriptionService implements IUserSubscriptionService {
     }
 
     @Override
-    public UserSubscriptionDTO activarSuscripcionDesdeWebhook(String email, String customerId, String subscriptionId, String tipoPlan) {
+    public UserSubscriptionDTO activarSuscripcionDesdeWebhook(String email, String tipoPlan) {
 
         Stripe.apiKey = stripeSecretKey;
 
@@ -94,22 +90,17 @@ public class UserSubscriptionService implements IUserSubscriptionService {
                 .orElseThrow(() -> new SuscripcionException("Usuario no encontrado con ese correo"));
 
         if (user.getRole() != Rol.INVERSIONISTA) {
-            throw new SuscripcionException("Solo los usuarios con rol INVERSIONISTA pueden tener suscripción.");
+            throw new SuscripcionException("Solo los usuarios con rol INVERSIONISTA pueden tener suscripcion.");
         }
 
         LocalDate fechaInicio;
         LocalDate fechaCancelacion;
+        String customerId;
+        String subscriptionId;
 
         try {
-            Subscription stripeSubscription = Subscription.retrieve(subscriptionId);
-            long startEpoch = stripeSubscription.getCurrentPeriodStart();
-            long endEpoch = stripeSubscription.getCurrentPeriodEnd();
-
-            fechaInicio = Instant.ofEpochSecond(startEpoch).atZone(ZoneId.systemDefault()).toLocalDate();
-            fechaCancelacion = Instant.ofEpochSecond(endEpoch).atZone(ZoneId.systemDefault()).toLocalDate();
-
-        } catch (StripeException e) {
-            System.err.println("Error al consultar Stripe para obtener fechas de la suscripción: " + e.getMessage());
+            customerId = "cus_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+            subscriptionId = "sub_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
 
             fechaInicio = LocalDate.now();
             if ("mensual".equalsIgnoreCase(tipoPlan)) {
@@ -119,28 +110,29 @@ public class UserSubscriptionService implements IUserSubscriptionService {
             } else {
                 fechaCancelacion = null;
             }
+
+        } catch (Exception e) {
+            throw new SuscripcionException("Error al generar informacion de suscripcion: " + e.getMessage());
         }
 
-
         UserSubscriptionDTO dto = new UserSubscriptionDTO();
-        dto.setUser(modelMapper.map(user, UserDTO.class));
+        dto.setUser(user.getId());
         dto.setStripeCustomerId(customerId);
         dto.setStripeSubscriptionId(subscriptionId);
         dto.setActivo(true);
         dto.setFechaInicio(fechaInicio);
         dto.setFechaCancelacion(fechaCancelacion);
-
+        dto.setTipoPlan(tipoPlan);
 
         UserSubscription subscription = modelMapper.map(dto, UserSubscription.class);
         subscription.setUser(user);
 
-
         Optional<UserSubscription> existente = subscriptionRepository.findByUser(user);
         if (existente.isPresent()) {
-            subscription.setId(existente.get().getId()); // actualiza la existente
-            System.out.println("Suscripción existente actualizada para: " + email);
+            subscription.setId(existente.get().getId());
+            System.out.println("Suscripcion existente actualizada para: " + email);
         } else {
-            System.out.println("Nueva suscripción creada para: " + email);
+            System.out.println("Nueva suscripcion creada para: " + email);
         }
 
         subscriptionRepository.save(subscription);
@@ -151,21 +143,29 @@ public class UserSubscriptionService implements IUserSubscriptionService {
     @Override
     public UserSubscriptionDTO verificarYActualizarEstado() {
         User user = userService.getAuthenticatedUserEntity();
-        UserSubscription subscription = user.getSubscription();
 
-        if (subscription != null && subscription.isActivo()) {
+        Optional<UserSubscription> optionalSub = subscriptionRepository.findByUser(user);
+        if (optionalSub.isEmpty()) {
+            return null;
+        }
+
+        UserSubscription subscription = optionalSub.get();
+
+        if (subscription.isActivo()) {
             LocalDate hoy = LocalDate.now();
 
             if (subscription.getFechaCancelacion() != null && hoy.isAfter(subscription.getFechaCancelacion())) {
-                UserSubscriptionDTO dto = modelMapper.map(subscription, UserSubscriptionDTO.class);
-                dto.setActivo(false);
-                subscription = modelMapper.map(dto, UserSubscription.class);
+                subscription.setActivo(false);
+                subscription.setTipoPlan(null);
+                subscription.setStripeCustomerId(null);
+                subscription.setStripeSubscriptionId(null);
+                subscription.setFechaInicio(null);
+                subscription.setFechaCancelacion(null);
                 subscriptionRepository.save(subscription);
-                System.out.println("Suscripción desactivada por vencimiento para el usuario: " + user.getEmail());
             }
         }
 
-        return subscription != null ? modelMapper.map(subscription, UserSubscriptionDTO.class) : null;
+        return modelMapper.map(subscription, UserSubscriptionDTO.class);
     }
 
     @Override
@@ -173,4 +173,6 @@ public class UserSubscriptionService implements IUserSubscriptionService {
         UserSubscriptionDTO updatedSubscription = verificarYActualizarEstado();
         return updatedSubscription != null && updatedSubscription.isActivo();
     }
+
+
 }

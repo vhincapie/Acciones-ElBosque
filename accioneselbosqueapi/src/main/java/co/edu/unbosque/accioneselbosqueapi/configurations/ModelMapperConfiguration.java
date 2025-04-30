@@ -11,7 +11,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ModelMapperConfiguration {
 
-
     @Bean
     public ModelMapper modelMapper() {
         ModelMapper modelMapper = new ModelMapper();
@@ -24,11 +23,21 @@ public class ModelMapperConfiguration {
 
     private void cargarMapeos(ModelMapper modelMapper) {
 
-        // Watchlist
-        modelMapper.typeMap(WatchlistItem.class, WatchlistItemDTO.class)
-                .addMappings(mapper -> mapper.map(WatchlistItem::getId, WatchlistItemDTO::setId));
-        modelMapper.typeMap(WatchlistItemDTO.class, WatchlistItem.class)
-                .addMappings(mapper -> mapper.map(WatchlistItemDTO::getId, WatchlistItem::setId));
+        // WatchlistItem → WatchlistItemDTO
+        modelMapper.createTypeMap(WatchlistItemDTO.class, WatchlistItem.class)
+                .addMappings(mapper -> {
+                    mapper.map(WatchlistItemDTO::getId, WatchlistItem::setId);
+                    mapper.skip(WatchlistItem::setUser); // ⚠️ Evita el error de conversión
+                });
+
+        // WatchlistItem → WatchlistItemDTO
+        modelMapper.createTypeMap(WatchlistItem.class, WatchlistItemDTO.class)
+                .addMappings(mapper -> {
+                    mapper.map(WatchlistItem::getId, WatchlistItemDTO::setId);
+                    mapper.map(src -> src.getUser().getId(), WatchlistItemDTO::setUser); // Para mostrar el id del usuario si se requiere
+                });
+
+
 
         // CreateAccountRequestDTO -> AlpacaAccountRequestDTO
         modelMapper.createTypeMap(CreateAccountRequestDTO.class, AlpacaAccountRequestDTO.class)
@@ -49,7 +58,6 @@ public class ModelMapperConfiguration {
                 .addMappings(mapper -> {
                     mapper.map(UserDTO::getRole, User::setRole);
                     mapper.map(UserDTO::getSubrole, User::setSubrole);
-                    mapper.skip(User::setSubscription);
                     mapper.skip(User::setMercadoInteres);
                 })
                 .setPostConverter(context -> {
@@ -70,7 +78,6 @@ public class ModelMapperConfiguration {
                 .addMappings(mapper -> {
                     mapper.map(User::getRole, UserDTO::setRole);
                     mapper.map(User::getSubrole, UserDTO::setSubrole);
-                    mapper.skip(UserDTO::setSubscription);
                     mapper.skip(UserDTO::setMarketInterestDTO);
                 })
                 .setPostConverter(context -> {
@@ -87,13 +94,14 @@ public class ModelMapperConfiguration {
                     return destination;
                 });
 
-        // UserSubscription <-> UserSubscriptionDTO
+        // UserSubscription -> UserSubscriptionDTO
         modelMapper.createTypeMap(UserSubscription.class, UserSubscriptionDTO.class)
-                .addMappings(mapper -> mapper.skip(UserSubscriptionDTO::setUser));
+                .addMappings(mapper -> mapper.map(src -> src.getUser().getId(), UserSubscriptionDTO::setUser));
 
-        // UserSubscriptionDTO <-> UserSubscription
+        // UserSubscriptionDTO -> UserSubscription
         modelMapper.createTypeMap(UserSubscriptionDTO.class, UserSubscription.class)
                 .addMappings(mapper -> mapper.skip(UserSubscription::setUser));
+
 
         // Mapeo para AccountACHRelationShip
         TypeMap<ResponseAccountACHDTO, AccountACHRelationShip> accountACHMap =

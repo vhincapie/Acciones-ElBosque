@@ -32,10 +32,13 @@ public class UserSubscription {
     @Column(name = "fecha_cancelacion")
     private LocalDate fechaCancelacion;
 
+    @Column(name = "tipo_plan")
+    private String tipoPlan;
+
     public UserSubscription() {
     }
 
-    public UserSubscription(Long id, User user, String stripeCustomerId, String stripeSubscriptionId, boolean activo, LocalDate fechaInicio, LocalDate fechaCancelacion) {
+    public UserSubscription(Long id, User user, String stripeCustomerId, String stripeSubscriptionId, boolean activo, LocalDate fechaInicio, LocalDate fechaCancelacion, String tipoPlan) {
         this.id = id;
         this.user = user;
         this.stripeCustomerId = stripeCustomerId;
@@ -43,6 +46,15 @@ public class UserSubscription {
         this.activo = activo;
         this.fechaInicio = fechaInicio;
         this.fechaCancelacion = fechaCancelacion;
+        this.tipoPlan = tipoPlan;
+    }
+
+    public String getTipoPlan() {
+        return tipoPlan;
+    }
+
+    public void setTipoPlan(String tipoPlan) {
+        this.tipoPlan = tipoPlan;
     }
 
     public Long getId() {

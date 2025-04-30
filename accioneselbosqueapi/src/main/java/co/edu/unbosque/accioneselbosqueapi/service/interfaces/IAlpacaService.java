@@ -8,5 +8,5 @@ public interface IAlpacaService {
 
     AlpacaAccountResponseDTO crearCuenta(CreateAccountRequestDTO request);
     void guardarCuentaAlpaca(AlpacaAccountResponseDTO dto, Long idUsuario);
-    AlpacaAccountUserResponseDTO obtenerCuentaPorUsuario(String username);
+
 }
