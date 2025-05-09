@@ -26,6 +26,8 @@ public class DisclosuresDTO {
         this.immediateFamilyExposed = immediateFamilyExposed;
     }
 
+    //Getters y Setters
+
     public boolean isControlPerson() {
         return controlPerson;
     }

@@ -1,7 +1,6 @@
 package co.edu.unbosque.accioneselbosqueapi.model.entity;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDate;
 
 @Entity
@@ -48,6 +47,8 @@ public class UserSubscription {
         this.fechaCancelacion = fechaCancelacion;
         this.tipoPlan = tipoPlan;
     }
+
+    //Getters y Setters
 
     public String getTipoPlan() {
         return tipoPlan;

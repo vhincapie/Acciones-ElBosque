@@ -28,6 +28,7 @@ public class UserSubscriptionDTO {
         this.tipoPlan = tipoPlan;
     }
 
+    //Getters y Setters
     public Long getId() {
         return id;
     }

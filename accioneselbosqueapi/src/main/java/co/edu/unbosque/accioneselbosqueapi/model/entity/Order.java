@@ -1,7 +1,6 @@
 package co.edu.unbosque.accioneselbosqueapi.model.entity;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -24,7 +23,7 @@ public class Order {
     private String assetClass;
 
     @Column(name = "qty")
-    private String qty;
+    private BigDecimal qty;
 
     @Column(name = "order_type")
     private String orderType;
@@ -36,10 +35,10 @@ public class Order {
     private String timeInForce;
 
     @Column(name = "limit_price")
-    private String limitPrice;
+    private BigDecimal limitPrice;
 
     @Column(name = "stop_price")
-    private String stopPrice;
+    private BigDecimal stopPrice;
 
     @Column(name = "status")
     private String status;
@@ -57,9 +56,13 @@ public class Order {
     @JoinColumn(name = "alpaca_account_id")
     private AlpacaAccount alpacaAccount;
 
+    @Column(name = "alpaca_order_id")
+    private String alpacaOrderId;
+
     public Order() {}
 
-    public Order(LocalDateTime createdAt, String symbol, String assetClass, String qty, String orderType, String side, String timeInForce, String limitPrice, String stopPrice, String status, BigDecimal transactionAmount, BigDecimal commissionAmount, BigDecimal netAmount, AlpacaAccount alpacaAccount) {
+    public Order(Long id, LocalDateTime createdAt, String symbol, String assetClass, BigDecimal qty, String orderType, String side, String timeInForce, BigDecimal limitPrice, BigDecimal stopPrice, String status, BigDecimal transactionAmount, BigDecimal commissionAmount, BigDecimal netAmount, AlpacaAccount alpacaAccount, String alpacaOrderId) {
+        this.id = id;
         this.createdAt = createdAt;
         this.symbol = symbol;
         this.assetClass = assetClass;
@@ -74,6 +77,7 @@ public class Order {
         this.commissionAmount = commissionAmount;
         this.netAmount = netAmount;
         this.alpacaAccount = alpacaAccount;
+        this.alpacaOrderId = alpacaOrderId;
     }
 
     // Getters y setters
@@ -109,14 +113,6 @@ public class Order {
         this.assetClass = assetClass;
     }
 
-    public String getQty() {
-        return qty;
-    }
-
-    public void setQty(String qty) {
-        this.qty = qty;
-    }
-
     public String getOrderType() {
         return orderType;
     }
@@ -139,22 +135,6 @@ public class Order {
 
     public void setTimeInForce(String timeInForce) {
         this.timeInForce = timeInForce;
-    }
-
-    public String getLimitPrice() {
-        return limitPrice;
-    }
-
-    public void setLimitPrice(String limitPrice) {
-        this.limitPrice = limitPrice;
-    }
-
-    public String getStopPrice() {
-        return stopPrice;
-    }
-
-    public void setStopPrice(String stopPrice) {
-        this.stopPrice = stopPrice;
     }
 
     public String getStatus() {
@@ -195,5 +175,37 @@ public class Order {
 
     public void setAlpacaAccount(AlpacaAccount alpacaAccount) {
         this.alpacaAccount = alpacaAccount;
+    }
+
+    public BigDecimal getQty() {
+        return qty;
+    }
+
+    public void setQty(BigDecimal qty) {
+        this.qty = qty;
+    }
+
+    public BigDecimal getLimitPrice() {
+        return limitPrice;
+    }
+
+    public void setLimitPrice(BigDecimal limitPrice) {
+        this.limitPrice = limitPrice;
+    }
+
+    public BigDecimal getStopPrice() {
+        return stopPrice;
+    }
+
+    public void setStopPrice(BigDecimal stopPrice) {
+        this.stopPrice = stopPrice;
+    }
+
+    public String getAlpacaOrderId() {
+        return alpacaOrderId;
+    }
+
+    public void setAlpacaOrderId(String alpacaOrderId) {
+        this.alpacaOrderId = alpacaOrderId;
     }
 }

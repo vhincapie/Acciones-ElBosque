@@ -39,12 +39,7 @@ public class WatchlistService implements IWatchlistService {
     private final UserService userService;
     private final IUserSubscriptionRepository subscriptionRepository;
 
-    public WatchlistService(
-            IWatchlistRepository repository,
-            ModelMapper modelMapper,
-            MarketService marketService,
-            UserService userService,
-            IUserSubscriptionRepository subscriptionRepository) {
+    public WatchlistService(IWatchlistRepository repository, ModelMapper modelMapper, MarketService marketService, UserService userService, IUserSubscriptionRepository subscriptionRepository) {
         this.repository = repository;
         this.modelMapper = modelMapper;
         this.marketService = marketService;
@@ -76,13 +71,7 @@ public class WatchlistService implements IWatchlistService {
     @Override
     public void delete(Long id) {
         User user = validarUsuarioPremium();
-        WatchlistItem item = repository.findById(id)
-                .orElseThrow(() -> new WatchlistNotFoundException("No se encontro el item con ID: " + id));
-
-        if (!item.getUser().getId().equals(user.getId())) {
-            throw new UnauthorizedAccessException("No tienes permisos para eliminar este item.");
-        }
-
+        WatchlistItem item = obtenerItemValidado(id, user);
         repository.deleteById(id);
     }
 
@@ -92,33 +81,14 @@ public class WatchlistService implements IWatchlistService {
 
         return repository.findAll().stream()
                 .filter(item -> item.getUser().getId().equals(user.getId()))
-                .map(item -> {
-                    WatchlistItemDTO dto = modelMapper.map(item, WatchlistItemDTO.class);
-
-                    try {
-                        StockDTO precios = findBySymbol(item.getSymbol());
-                        dto.setCurrentPrice(precios.getCurrentPrice());
-                        dto.setHighPrice(precios.getHighPrice());
-                        dto.setLowPrice(precios.getLowPrice());
-                        dto.setPreviousClosePrice(precios.getPreviousClosePrice());
-                    } catch (Exception e) {
-                        System.err.println("No se pudieron cargar precios para " + item.getSymbol() + ": " + e.getMessage());
-                    }
-
-                    return dto;
-                })
+                .map(item -> mapearConPrecios(item))
                 .collect(Collectors.toList());
     }
 
     @Override
     public void updateAlertPrices(Long id, Double minPrice, Double maxPrice) {
         User user = validarUsuarioPremium();
-        WatchlistItem item = repository.findById(id)
-                .orElseThrow(() -> new WatchlistNotFoundException("Item no encontrado con ID: " + id));
-
-        if (!item.getUser().getId().equals(user.getId())) {
-            throw new UnauthorizedAccessException("No tienes permisos para actualizar este item.");
-        }
+        WatchlistItem item = obtenerItemValidado(id, user);
 
         if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
             throw new WatchlistBadRequestException("El precio minimo no puede ser mayor al maximo.");
@@ -135,12 +105,19 @@ public class WatchlistService implements IWatchlistService {
         List<StockDTO> suggestions = new ArrayList<>();
         String lowerQuery = query.toLowerCase();
 
+        suggestions.addAll(buscarPorNombre(restTemplate, query));
+        if (!suggestions.isEmpty()) return suggestions;
 
+        suggestions.addAll(buscarPorMic(restTemplate, lowerQuery));
+        return suggestions;
+    }
+
+    private List<StockDTO> buscarPorNombre(RestTemplate restTemplate, String query) {
+        List<StockDTO> resultados = new ArrayList<>();
         try {
             String searchUrl = SYMBOL_SEARCH_URL + query + "&token=" + apiKey;
             String response = restTemplate.getForObject(searchUrl, String.class);
-            JSONObject json = new JSONObject(response);
-            JSONArray results = json.getJSONArray("result");
+            JSONArray results = new JSONObject(response).getJSONArray("result");
 
             for (int i = 0; i < results.length(); i++) {
                 JSONObject item = results.getJSONObject(i);
@@ -149,20 +126,19 @@ public class WatchlistService implements IWatchlistService {
 
                 if (!symbol.contains(".")) {
                     StockDTO dto = buildStockDTO(restTemplate, symbol, description);
-                    if (dto != null) suggestions.add(dto);
+                    if (dto != null && dto.getCurrentPrice() > 0.0) resultados.add(dto);
                 }
             }
-
-
-            if (!suggestions.isEmpty()) return suggestions;
-
         } catch (Exception e) {
             throw new MarketServiceUnavailableException("Error al buscar por simbolo en Finnhub: " + e.getMessage());
         }
+        return resultados;
+    }
 
+    private List<StockDTO> buscarPorMic(RestTemplate restTemplate, String lowerQuery) {
+        List<StockDTO> resultados = new ArrayList<>();
         try {
-            String url = SYMBOL_LOOKUP_URL + apiKey;
-            String response = restTemplate.getForObject(url, String.class);
+            String response = restTemplate.getForObject(SYMBOL_LOOKUP_URL + apiKey, String.class);
             JSONArray array = new JSONArray(response);
 
             for (int i = 0; i < array.length(); i++) {
@@ -177,15 +153,36 @@ public class WatchlistService implements IWatchlistService {
                         (mic.equalsIgnoreCase("XNYS") || mic.equalsIgnoreCase("XNAS"))) {
 
                     StockDTO dto = buildStockDTO(restTemplate, symbol, description);
-                    if (dto != null) suggestions.add(dto);
+                    if (dto != null) resultados.add(dto);
                 }
             }
-
         } catch (Exception e) {
             throw new MarketServiceUnavailableException("No se pudieron buscar simbolos: " + e.getMessage());
         }
+        return resultados;
+    }
 
-        return suggestions;
+    private WatchlistItem obtenerItemValidado(Long id, User user) {
+        WatchlistItem item = repository.findById(id)
+                .orElseThrow(() -> new WatchlistNotFoundException("Item no encontrado con ID: " + id));
+        if (!item.getUser().getId().equals(user.getId())) {
+            throw new UnauthorizedAccessException("No tienes permisos para modificar este item.");
+        }
+        return item;
+    }
+
+    private WatchlistItemDTO mapearConPrecios(WatchlistItem item) {
+        WatchlistItemDTO dto = modelMapper.map(item, WatchlistItemDTO.class);
+        try {
+            StockDTO precios = findBySymbol(item.getSymbol());
+            dto.setCurrentPrice(precios.getCurrentPrice());
+            dto.setHighPrice(precios.getHighPrice());
+            dto.setLowPrice(precios.getLowPrice());
+            dto.setPreviousClosePrice(precios.getPreviousClosePrice());
+        } catch (Exception e) {
+            throw new StockDataUnavailableException("No se pudieron cargar precios para " + item.getSymbol(), e);
+        }
+        return dto;
     }
 
     public StockDTO buildStockDTO(RestTemplate restTemplate, String symbol, String description) {
@@ -205,7 +202,7 @@ public class WatchlistService implements IWatchlistService {
             return dto;
 
         } catch (Exception e) {
-            return null;
+            throw new StockDataUnavailableException("No se pudo obtener la cotizacion para el simbolo: " + symbol, e);
         }
     }
 
@@ -283,7 +280,4 @@ public class WatchlistService implements IWatchlistService {
             throw new MarketServiceUnavailableException("Error inesperado al consultar el simbolo " + symbol + ": " + e.getMessage());
         }
     }
-
-
-
 }

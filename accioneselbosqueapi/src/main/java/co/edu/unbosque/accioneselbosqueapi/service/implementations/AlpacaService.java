@@ -19,7 +19,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import java.time.LocalDateTime;
 
-
 @Service
 public class AlpacaService implements IAlpacaService {
 
@@ -37,7 +36,9 @@ public class AlpacaService implements IAlpacaService {
     private final IUserRepository userRepository;
     private final ModelMapper modelMapper;
 
-    public AlpacaService(IAlpacaAccountRepository alpacaAccountRepository, IUserRepository userRepository, ModelMapper modelMapper) {
+    public AlpacaService(IAlpacaAccountRepository alpacaAccountRepository,
+                         IUserRepository userRepository,
+                         ModelMapper modelMapper) {
         this.alpacaAccountRepository = alpacaAccountRepository;
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
@@ -46,20 +47,9 @@ public class AlpacaService implements IAlpacaService {
     @Override
     public AlpacaAccountResponseDTO crearCuenta(CreateAccountRequestDTO request) {
         try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBasicAuth(apiKey, apiSecret);
-
-            AlpacaAccountRequestDTO alpacaRequest = new AlpacaAccountRequestDTO();
-            alpacaRequest.setContact(request.getContact());
-            alpacaRequest.setIdentity(request.getIdentity());
-            alpacaRequest.setDisclosures(request.getDisclosures());
-            alpacaRequest.setAgreements(request.getAgreements());
-            alpacaRequest.setDocuments(request.getDocuments());
-            alpacaRequest.setTrustedContact(request.getTrustedContact());
-            alpacaRequest.setEnabledAssets(request.getEnabledAssets());
-
-            HttpEntity<AlpacaAccountRequestDTO> entity = new HttpEntity<>(alpacaRequest, headers);
+            HttpHeaders headers = construirHeadersAutenticados();
+            AlpacaAccountRequestDTO cuerpo = construirRequestAlpaca(request);
+            HttpEntity<AlpacaAccountRequestDTO> entity = new HttpEntity<>(cuerpo, headers);
 
             ResponseEntity<AlpacaAccountResponseDTO> response = restTemplate.exchange(
                     accountUrl,
@@ -73,6 +63,7 @@ public class AlpacaService implements IAlpacaService {
             } else {
                 throw new AlpacaAccountCreationException("Error inesperado al crear la cuenta: " + response.getBody());
             }
+
         } catch (HttpClientErrorException.Conflict e) {
             throw new AlpacaDuplicateAccountException("Ya existe una cuenta en Alpaca con este correo.");
         } catch (HttpClientErrorException e) {
@@ -82,8 +73,7 @@ public class AlpacaService implements IAlpacaService {
 
     @Override
     public void guardarCuentaAlpaca(AlpacaAccountResponseDTO dto, Long idUsuario) {
-        User usuario = userRepository.findById(idUsuario)
-                .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado"));
+        User usuario = obtenerUsuario(idUsuario);
 
         AlpacaAccount cuenta = modelMapper.map(dto, AlpacaAccount.class);
         cuenta.setAlpacaId(dto.getId());
@@ -93,5 +83,27 @@ public class AlpacaService implements IAlpacaService {
         alpacaAccountRepository.save(cuenta);
     }
 
+    private HttpHeaders construirHeadersAutenticados() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBasicAuth(apiKey, apiSecret);
+        return headers;
+    }
 
+    private AlpacaAccountRequestDTO construirRequestAlpaca(CreateAccountRequestDTO request) {
+        AlpacaAccountRequestDTO dto = new AlpacaAccountRequestDTO();
+        dto.setContact(request.getContact());
+        dto.setIdentity(request.getIdentity());
+        dto.setDisclosures(request.getDisclosures());
+        dto.setAgreements(request.getAgreements());
+        dto.setDocuments(request.getDocuments());
+        dto.setTrustedContact(request.getTrustedContact());
+        dto.setEnabledAssets(request.getEnabledAssets());
+        return dto;
+    }
+
+    private User obtenerUsuario(Long idUsuario) {
+        return userRepository.findById(idUsuario)
+                .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado"));
+    }
 }

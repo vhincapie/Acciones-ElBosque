@@ -22,6 +22,7 @@ public class DocumentDTO {
         this.mimeType = mimeType;
     }
 
+    //Getters y Setters
     public String getDocumentType() {
         return documentType;
     }

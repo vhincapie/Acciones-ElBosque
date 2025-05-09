@@ -34,6 +34,7 @@ public class UserDTO {
         this.marketInterestDTO = marketInterestDTO;
     }
 
+    //Getters y Setters
     public Long getId() {
         return id;
     }

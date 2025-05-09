@@ -1,5 +1,6 @@
 package co.edu.unbosque.accioneselbosqueapi.exceptions.handler;
 
+import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.StockDataUnavailableException;
 import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.UnauthorizedAccessException;
 import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.WatchlistBadRequestException;
 import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.WatchlistNotFoundException;
@@ -29,4 +30,11 @@ public class WatchlistExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(new BaseResponse(ex.getMessage(), HttpStatus.FORBIDDEN.value()));
     }
+
+    @ExceptionHandler(StockDataUnavailableException.class)
+    public ResponseEntity<BaseResponse> handleStockDataUnavailable(StockDataUnavailableException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(new BaseResponse(ex.getMessage(), HttpStatus.BAD_GATEWAY.value()));
+    }
+
 }

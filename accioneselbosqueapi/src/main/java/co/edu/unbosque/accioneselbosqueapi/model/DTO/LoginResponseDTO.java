@@ -14,6 +14,7 @@ public class LoginResponseDTO {
         this.nombre = nombre;
     }
 
+    //Getters y Setters
     public Long getId() {
         return id;
     }

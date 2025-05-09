@@ -7,7 +7,7 @@ import co.edu.unbosque.accioneselbosqueapi.model.DTO.ResponseAccountACHDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.AccountACHRelationShip;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.AlpacaAccount;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
-import co.edu.unbosque.accioneselbosqueapi.repository.AccountACHRepository;
+import co.edu.unbosque.accioneselbosqueapi.repository.IAccountACHRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.IAlpacaAccountRepository;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IAccountACHService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,11 +15,11 @@ import okhttp3.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.List;
 
 @Service
 public class AccountACHService implements IAccountACHService<AccountACHRelationShipDTO> {
@@ -33,13 +33,18 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
     private static final String API_URL = "https://broker-api.sandbox.alpaca.markets/v1/accounts/{account_id}/ach_relationships";
 
     private final OkHttpClient client;
-    private final AccountACHRepository achRepository;
+    private final IAccountACHRepository achRepository;
     private final IAlpacaAccountRepository alpacaAccountRepository;
     private final UserService userService;
     private final ModelMapper modelMapper;
     private final ObjectMapper objectMapper;
 
-    public AccountACHService(OkHttpClient client, AccountACHRepository achRepository, IAlpacaAccountRepository alpacaAccountRepository, UserService userService, ModelMapper modelMapper, ObjectMapper objectMapper) {
+    public AccountACHService(OkHttpClient client,
+                             IAccountACHRepository achRepository,
+                             IAlpacaAccountRepository alpacaAccountRepository,
+                             UserService userService,
+                             ModelMapper modelMapper,
+                             ObjectMapper objectMapper) {
         this.client = client;
         this.achRepository = achRepository;
         this.alpacaAccountRepository = alpacaAccountRepository;
@@ -50,31 +55,32 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
 
     @Override
     public ResponseAccountACHDTO create(AccountACHRelationShipDTO dto) {
-        // Obtener el usuario autenticado
         User usuario = userService.getAuthenticatedUserEntity();
-
-        // Buscar la cuenta Alpaca asociada al usuario
-        AlpacaAccount alpacaAccount = alpacaAccountRepository.findByUserId(usuario.getId())
-                .orElseThrow(() -> new ACHBadRequestException("No se encontró la cuenta Alpaca asociada al usuario."));
-
-        // Obtener el ID generado por Alpaca (UUID tipo String)
+        AlpacaAccount alpacaAccount = getAlpacaAccount(usuario);
         String alpacaId = alpacaAccount.getAlpacaId();
 
         validateCharacters(dto);
+        dto.setBankRoutingNumber("123103716");
 
+        ResponseAccountACHDTO responseDTO = executeCreateACHCall(dto, alpacaId);
+
+        AccountACHRelationShip ach = modelMapper.map(responseDTO, AccountACHRelationShip.class);
+        ach.setAchId(responseDTO.getId());
+        ach.setAlpacaAccount(alpacaAccount);
+        ach.setCreatedAt(LocalDateTime.now());
+
+        achRepository.save(ach);
+        return responseDTO;
+    }
+
+    private AlpacaAccount getAlpacaAccount(User usuario) {
+        return alpacaAccountRepository.findByUserId(usuario.getId())
+                .orElseThrow(() -> new ACHBadRequestException("No se encontro la cuenta Alpaca asociada al usuario."));
+    }
+
+    private ResponseAccountACHDTO executeCreateACHCall(AccountACHRelationShipDTO dto, String accountId) {
         try {
-            // Llamada a la API externa de Alpaca
-            ResponseAccountACHDTO responseDTO = callAlpacaCreateACHApi(dto, alpacaId);
-
-            // Mapear y guardar en base de datos
-            AccountACHRelationShip ach = modelMapper.map(responseDTO, AccountACHRelationShip.class);
-            ach.setAchId(responseDTO.getId());
-            ach.setAlpacaAccount(alpacaAccount);
-            ach.setCreatedAt(LocalDateTime.now());
-
-            achRepository.save(ach);
-            return responseDTO;
-
+            return callAlpacaCreateACHApi(dto, accountId);
         } catch (IOException e) {
             throw new ACHBadRequestException("Error al comunicarse con la API de Alpaca");
         }
@@ -85,8 +91,7 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
         String json = objectMapper.writeValueAsString(dto);
 
         RequestBody body = RequestBody.create(json, MediaType.parse("application/json; charset=utf-8"));
-        String credentials = apiKey + ":" + apiSecret;
-        String base64Credentials = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+        String base64Credentials = Base64.getEncoder().encodeToString((apiKey + ":" + apiSecret).getBytes(StandardCharsets.UTF_8));
 
         Request request = new Request.Builder()
                 .url(url)
@@ -102,30 +107,29 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
                 return objectMapper.readValue(responseBody, ResponseAccountACHDTO.class);
             }
 
-            switch (response.code()) {
-                case 400 -> throw new ACHBadRequestException("Solicitud inválida. Verifica los datos enviados.");
-                case 409 -> throw new ACHConflictException("Ya existe una relación bancaria para esta cuenta.");
-                default -> throw new ACHBadRequestException("Fallo al crear la relación bancaria en Alpaca.");
-            }
+            throw switch (response.code()) {
+                case 400 -> new ACHBadRequestException("Solicitud invalida. Verifica los datos enviados.");
+                case 409 -> new ACHConflictException("Ya existe una relacion bancaria para esta cuenta.");
+                default -> new ACHBadRequestException("Fallo al crear la relación bancaria en Alpaca.");
+            };
         }
     }
 
     private void validateCharacters(AccountACHRelationShipDTO dto) {
         String allowedPattern = "^[A-Za-z0-9 !'()*+,.\\-/:;?=]*$";
-        String[] fieldsToValidate = {
+        String[] values = {
                 dto.getAccountOwnerName(), dto.getBankAccountType(), dto.getBankAccountNumber(),
                 dto.getBankRoutingNumber(), dto.getNickname()
         };
         String[] fieldNames = {
-                "account_owner_name", "bank_account_type", "bank_account_number", "bank_routing_number",
-                "nickname"
+                "account_owner_name", "bank_account_type", "bank_account_number",
+                "bank_routing_number", "nickname"
         };
 
-        for (int i = 0; i < fieldsToValidate.length; i++) {
-            String value = fieldsToValidate[i];
-            if (value != null && !value.matches(allowedPattern)) {
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] != null && !values[i].matches(allowedPattern)) {
                 throw new ACHBadRequestException("El campo '" + fieldNames[i] +
-                        "' contiene caracteres inválidos. Solo se permiten: A-Z a-z 0-9 y símbolos ! ' ( ) * + , - . / : ; ? = [espacio]");
+                        "' contiene caracteres invalidos. Solo se permiten: A-Z a-z 0-9 y simbolos ! ' ( ) * + , - . / : ; ? = [espacio]");
             }
         }
     }

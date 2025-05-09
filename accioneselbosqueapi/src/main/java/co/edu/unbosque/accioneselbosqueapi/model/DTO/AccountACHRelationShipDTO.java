@@ -35,6 +35,7 @@ public class AccountACHRelationShipDTO {
         this.alpacaAccountId = alpacaAccountId;
     }
 
+    //Getters y Setters
     public String getAccountOwnerName() {
         return accountOwnerName;
     }

@@ -23,6 +23,7 @@ public class AgreementDTO {
         this.ipAddress = ipAddress;
     }
 
+    //Getters y Setters
     public String getAgreement() {
         return agreement;
     }

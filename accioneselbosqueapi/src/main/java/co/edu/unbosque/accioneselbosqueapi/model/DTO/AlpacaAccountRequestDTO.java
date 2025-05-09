@@ -31,6 +31,7 @@ public class AlpacaAccountRequestDTO {
         this.enabledAssets = enabledAssets;
     }
 
+    //Getters y Setters
     public ContactDTO getContact() {
         return contact;
     }

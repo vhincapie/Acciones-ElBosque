@@ -5,6 +5,7 @@ import co.edu.unbosque.accioneselbosqueapi.model.DTO.OrderRequestDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.OrderResponseDTO;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IOrderService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -16,6 +17,7 @@ public class OrderController implements IOrderAPI {
         this.orderService = orderService;
     }
 
+    @PreAuthorize("hasRole('INVERSIONISTA')")
     @Override
     public ResponseEntity<OrderResponseDTO> create(OrderRequestDTO orderRequestDTO) {
         OrderResponseDTO createdOrder = orderService.create(orderRequestDTO);

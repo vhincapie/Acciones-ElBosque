@@ -16,8 +16,6 @@ public class MarketInterest {
     private String nombre;
 
 
-
-
     public MarketInterest() {}
 
     public MarketInterest(Long id, String nombre) {
@@ -26,6 +24,7 @@ public class MarketInterest {
 
     }
 
+    //Getters y Setters
     public Long getId() {
         return id;
     }

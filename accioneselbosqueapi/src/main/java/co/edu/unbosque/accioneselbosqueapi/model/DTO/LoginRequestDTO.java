@@ -12,6 +12,7 @@ public class LoginRequestDTO {
         this.password = password;
     }
 
+    //Getters y Setters
     public String getUsername() {
         return username;
     }

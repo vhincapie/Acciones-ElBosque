@@ -1,7 +1,6 @@
 package co.edu.unbosque.accioneselbosqueapi.model.DTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 
 public class IdentityDTO {
@@ -109,6 +108,7 @@ public class IdentityDTO {
         this.numberOfDependents = numberOfDependents;
     }
 
+    //Getters y Setters
     public String getGivenName() {
         return givenName;
     }

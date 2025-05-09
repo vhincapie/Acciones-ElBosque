@@ -1,7 +1,7 @@
 package co.edu.unbosque.accioneselbosqueapi.model.entity;
 
 import jakarta.persistence.*;
-
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -20,7 +20,7 @@ public class Transfer {
     private String type;
 
     @Column(name = "amount")
-    private String amount;
+    private BigDecimal amount;
 
     @Column(name = "currency")
     private String currency;
@@ -33,16 +33,27 @@ public class Transfer {
     @JoinColumn(name = "relationship_id")
     private AccountACHRelationShip accountACHRelationShip;
 
+    @Column(name = "status")
+    private String status;
+
+    @Column(name = "alpaca_transfer_id")
+    private String alpacaTransferId;
+
+
+
     public Transfer() {
     }
 
-    public Transfer(LocalDateTime createdAt, String type, String amount, String currency, AlpacaAccount alpacaAccount, AccountACHRelationShip accountACHRelationShip) {
+    public Transfer(Long id, LocalDateTime createdAt, String type, BigDecimal amount, String currency, AlpacaAccount alpacaAccount, AccountACHRelationShip accountACHRelationShip, String status, String alpacaTransferId) {
+        this.id = id;
         this.createdAt = createdAt;
         this.type = type;
         this.amount = amount;
         this.currency = currency;
         this.alpacaAccount = alpacaAccount;
         this.accountACHRelationShip = accountACHRelationShip;
+        this.status = status;
+        this.alpacaTransferId = alpacaTransferId;
     }
 
     // Getters y Setters
@@ -70,14 +81,6 @@ public class Transfer {
         this.type = type;
     }
 
-    public String getAmount() {
-        return amount;
-    }
-
-    public void setAmount(String amount) {
-        this.amount = amount;
-    }
-
     public String getCurrency() {
         return currency;
     }
@@ -100,5 +103,29 @@ public class Transfer {
 
     public void setAccountACHRelationShip(AccountACHRelationShip accountACHRelationShip) {
         this.accountACHRelationShip = accountACHRelationShip;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getAlpacaTransferId() {
+        return alpacaTransferId;
+    }
+
+    public void setAlpacaTransferId(String alpacaTransferId) {
+        this.alpacaTransferId = alpacaTransferId;
     }
 }

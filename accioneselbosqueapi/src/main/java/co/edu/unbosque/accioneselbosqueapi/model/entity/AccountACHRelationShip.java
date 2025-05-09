@@ -1,7 +1,6 @@
 package co.edu.unbosque.accioneselbosqueapi.model.entity;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 
 @Entity

@@ -28,6 +28,7 @@ public class WatchlistItemDTO {
         this.lowPrice = lowPrice;
         this.previousClosePrice = previousClosePrice;
     }
+    //Getters y Setters
 
     public Long getId() {
         return id;

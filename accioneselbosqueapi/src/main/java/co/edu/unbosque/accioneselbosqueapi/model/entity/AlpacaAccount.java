@@ -1,7 +1,6 @@
 package co.edu.unbosque.accioneselbosqueapi.model.entity;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 
 
@@ -23,9 +22,6 @@ public class AlpacaAccount {
     @Column(name = "currency")
     private String currency;
 
-    @Column(name = "account_type")
-    private String accountType;
-
     @OneToOne
     @JoinColumn(name = "id_usuario", referencedColumnName = "id_usuario")
     private User user;
@@ -36,16 +32,16 @@ public class AlpacaAccount {
     public AlpacaAccount() {
     }
 
-    public AlpacaAccount(Long id, String alpacaId, String status, String currency, String accountType, User user, LocalDateTime createdAt) {
+    public AlpacaAccount(Long id, String alpacaId, String status, String currency,  User user, LocalDateTime createdAt) {
         this.id = id;
         this.alpacaId = alpacaId;
         this.status = status;
         this.currency = currency;
-        this.accountType = accountType;
         this.user = user;
         this.createdAt = createdAt;
     }
 
+    //Getters y Setters
     public Long getId() {
         return id;
     }
@@ -76,14 +72,6 @@ public class AlpacaAccount {
 
     public void setCurrency(String currency) {
         this.currency = currency;
-    }
-
-    public String getAccountType() {
-        return accountType;
-    }
-
-    public void setAccountType(String accountType) {
-        this.accountType = accountType;
     }
 
     public User getUser() {

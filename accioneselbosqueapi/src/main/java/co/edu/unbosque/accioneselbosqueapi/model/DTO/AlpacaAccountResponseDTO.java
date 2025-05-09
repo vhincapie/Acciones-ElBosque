@@ -9,6 +9,7 @@ public class AlpacaAccountResponseDTO {
     public AlpacaAccountResponseDTO() {
     }
 
+    //Getters y Setters
     public AlpacaAccountResponseDTO(String id, String status, String currency, String accountType) {
         this.id = id;
         this.status = status;

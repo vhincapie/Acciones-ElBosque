@@ -39,4 +39,10 @@ public class MarketExceptionHandler {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(new BaseResponse(ex.getMessage(), HttpStatus.SERVICE_UNAVAILABLE.value()));
     }
+
+    @ExceptionHandler(ExternalServiceException.class)
+    public ResponseEntity<BaseResponse> handleExternalService(ExternalServiceException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(new BaseResponse(ex.getMessage(), HttpStatus.BAD_GATEWAY.value()));
+    }
 }

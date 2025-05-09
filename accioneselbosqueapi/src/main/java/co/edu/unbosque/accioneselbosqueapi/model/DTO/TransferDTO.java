@@ -3,6 +3,8 @@ package co.edu.unbosque.accioneselbosqueapi.model.DTO;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.math.BigDecimal;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TransferDTO {
 
@@ -10,27 +12,31 @@ public class TransferDTO {
     private String transferType;
 
     @JsonProperty("relationship_id")
-    private String relationshipId; // Solo para ACH
+    private String relationshipId;
 
     @JsonProperty("bank_id")
-    private String bankId; // Solo para wire
+    private String bankId;
 
     @JsonProperty("amount")
-    private String amount;
+    private BigDecimal amount;
 
     @JsonProperty("direction")
     private String direction;
 
     @JsonProperty("timing")
-    private String timing; // Solo aplica "immediate" por ahora
+    private String timing;
 
     private Long alpacaAccountId;
 
     private Long accountAchrelationshipId;
 
+    private String status;
+
+    private String alpacaTransferId;
+
     public TransferDTO() {}
 
-    public TransferDTO(String transferType, String relationshipId, String bankId, String amount, String direction, String timing, Long alpacaAccountId, Long accountAchrelationshipId) {
+    public TransferDTO(String transferType, String relationshipId, String bankId, BigDecimal amount, String direction, String timing, Long alpacaAccountId, Long accountAchrelationshipId, String status, String alpacaTransferId) {
         this.transferType = transferType;
         this.relationshipId = relationshipId;
         this.bankId = bankId;
@@ -39,9 +45,18 @@ public class TransferDTO {
         this.timing = timing;
         this.alpacaAccountId = alpacaAccountId;
         this.accountAchrelationshipId = accountAchrelationshipId;
+        this.status = status;
+        this.alpacaTransferId = alpacaTransferId;
     }
 
     // Getters y Setters
+    public String getAlpacaTransferId() {
+        return alpacaTransferId;
+    }
+
+    public void setAlpacaTransferId(String alpacaTransferId) {
+        this.alpacaTransferId = alpacaTransferId;
+    }
 
     public String getTransferType() {
         return transferType;
@@ -65,14 +80,6 @@ public class TransferDTO {
 
     public void setBankId(String bankId) {
         this.bankId = bankId;
-    }
-
-    public String getAmount() {
-        return amount;
-    }
-
-    public void setAmount(String amount) {
-        this.amount = amount;
     }
 
     public String getDirection() {
@@ -105,5 +112,21 @@ public class TransferDTO {
 
     public void setAccountAchrelationshipId(Long accountAchrelationshipId) {
         this.accountAchrelationshipId = accountAchrelationshipId;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

@@ -38,7 +38,6 @@ public class ModelMapperConfiguration {
                 });
 
 
-
         // CreateAccountRequestDTO -> AlpacaAccountRequestDTO
         modelMapper.createTypeMap(CreateAccountRequestDTO.class, AlpacaAccountRequestDTO.class)
                 .addMappings(mapper -> mapper.skip(AlpacaAccountRequestDTO::setEnabledAssets));
@@ -103,7 +102,7 @@ public class ModelMapperConfiguration {
                 .addMappings(mapper -> mapper.skip(UserSubscription::setUser));
 
 
-        // Mapeo para AccountACHRelationShip
+        // AccountACHRelationShipDTO → AccountACHRelationShip
         TypeMap<ResponseAccountACHDTO, AccountACHRelationShip> accountACHMap =
                 modelMapper.createTypeMap(ResponseAccountACHDTO.class, AccountACHRelationShip.class);
 
@@ -117,7 +116,12 @@ public class ModelMapperConfiguration {
             m.skip(AccountACHRelationShip::setId);
         });
 
-        // Mapeo para Transfer
+        // AccountACHRelationShip → AccountACHRelationShipDTO
+        modelMapper.createTypeMap(AccountACHRelationShip.class, AccountACHRelationShipDTO.class)
+                .addMappings(mapper -> mapper.map(src -> src.getAlpacaAccount().getId(), AccountACHRelationShipDTO::setAlpacaAccountId));
+
+
+        // TransferDTO → Transfer
         TypeMap<ResponseTransferDTO, Transfer> transferMap = modelMapper.createTypeMap(ResponseTransferDTO.class, Transfer.class);
         transferMap.addMappings(m -> {
             m.map(ResponseTransferDTO::getType, Transfer::setType);
@@ -126,7 +130,7 @@ public class ModelMapperConfiguration {
             m.skip(Transfer::setId);
         });
 
-        // Mapeo para Order
+        // OrderDTO → Order
         TypeMap<OrderResponseDTO, Order> orderMap = modelMapper.createTypeMap(OrderResponseDTO.class, Order.class);
         orderMap.addMappings(m -> {
             m.skip(Order::setId);

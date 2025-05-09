@@ -45,6 +45,7 @@ public class WatchlistItem {
         this.user = user;
     }
 
+    //Getters y Setters
     public Long getId() {
         return id;
     }

@@ -10,7 +10,7 @@ public class MarketStatusDTO {
         this.abierto = abierto;
         this.mensaje = mensaje;
     }
-
+    //Getters y Setters
     public boolean isAbierto() {
         return abierto;
     }

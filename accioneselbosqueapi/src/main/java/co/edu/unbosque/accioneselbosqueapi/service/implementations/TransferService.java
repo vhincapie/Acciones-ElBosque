@@ -1,15 +1,16 @@
 package co.edu.unbosque.accioneselbosqueapi.service.implementations;
 
 import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.TransferBadRequestException;
+import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.UsuarioNoEncontradoException;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.ResponseTransferDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.TransferDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.AccountACHRelationShip;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.AlpacaAccount;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.Transfer;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
-import co.edu.unbosque.accioneselbosqueapi.repository.AccountACHRepository;
+import co.edu.unbosque.accioneselbosqueapi.repository.IAccountACHRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.IAlpacaAccountRepository;
-import co.edu.unbosque.accioneselbosqueapi.repository.TransferRepository;
+import co.edu.unbosque.accioneselbosqueapi.repository.ITransferRepository;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.ITransferService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
@@ -34,17 +35,23 @@ public class TransferService implements ITransferService<TransferDTO> {
     private static final String API_URL = "https://broker-api.sandbox.alpaca.markets/v1/accounts/{account_id}/transfers";
 
     private final OkHttpClient client;
-    private final TransferRepository transferRepository;
-    private final AccountACHRepository accountACHRepository;
+    private final ITransferRepository transferRepository;
+    private final IAccountACHRepository achRepository;
     private final IAlpacaAccountRepository alpacaAccountRepository;
     private final UserService userService;
     private final ModelMapper modelMapper;
     private final ObjectMapper objectMapper;
 
-    public TransferService(OkHttpClient client, TransferRepository transferRepository, AccountACHRepository accountACHRepository, IAlpacaAccountRepository alpacaAccountRepository, UserService userService, ModelMapper modelMapper, ObjectMapper objectMapper) {
+    public TransferService(OkHttpClient client,
+                           ITransferRepository transferRepository,
+                           IAccountACHRepository achRepository,
+                           IAlpacaAccountRepository alpacaAccountRepository,
+                           UserService userService,
+                           ModelMapper modelMapper,
+                           ObjectMapper objectMapper) {
         this.client = client;
         this.transferRepository = transferRepository;
-        this.accountACHRepository = accountACHRepository;
+        this.achRepository = achRepository;
         this.alpacaAccountRepository = alpacaAccountRepository;
         this.userService = userService;
         this.modelMapper = modelMapper;
@@ -53,33 +60,46 @@ public class TransferService implements ITransferService<TransferDTO> {
 
     @Override
     public ResponseTransferDTO create(TransferDTO transferDTO) {
-        // Obtener usuario autenticado y su cuenta Alpaca
         User user = userService.getAuthenticatedUserEntity();
-
-        AlpacaAccount alpacaAccount = alpacaAccountRepository.findByUser(user)
-                .orElseThrow(() -> new TransferBadRequestException("No se encontró la cuenta Alpaca del usuario autenticado."));
-
+        AlpacaAccount alpacaAccount = obtenerCuentaAlpaca(user.getId());
         String alpacaId = alpacaAccount.getAlpacaId();
 
-        // Obtener la relación ACH asociada a la cuenta
-        AccountACHRelationShip achRelation = accountACHRepository.findFirstByAlpacaAccount(alpacaAccount)
-                .orElseThrow(() -> new TransferBadRequestException("No se encontró una relación bancaria asociada a la cuenta Alpaca."));
+        AccountACHRelationShip achRelation = obtenerRelacionACH(alpacaAccount);
 
-        // Preparar el cuerpo con los datos necesarios
+        prepararTransferencia(transferDTO, achRelation);
+
+        ResponseTransferDTO responseDTO = ejecutarTransferencia(transferDTO, alpacaId);
+
+        Transfer transferencia = modelMapper.map(responseDTO, Transfer.class);
+        transferencia.setAlpacaAccount(alpacaAccount);
+        transferencia.setAccountACHRelationShip(achRelation);
+        transferencia.setCreatedAt(LocalDateTime.now());
+        transferencia.setAlpacaTransferId(responseDTO.getId());
+
+        transferRepository.save(transferencia);
+        return responseDTO;
+    }
+
+    private AlpacaAccount obtenerCuentaAlpaca(Long userId) {
+        return alpacaAccountRepository.findByUserId(userId)
+                .orElseThrow(() -> new UsuarioNoEncontradoException("No se encontro la cuenta Alpaca del usuario autenticado."));
+    }
+
+    private AccountACHRelationShip obtenerRelacionACH(AlpacaAccount alpacaAccount) {
+        return achRepository.findFirstByAlpacaAccount(alpacaAccount)
+                .orElseThrow(() -> new TransferBadRequestException("No se encontro una relacion bancaria asociada a la cuenta Alpaca."));
+    }
+
+    private void prepararTransferencia(TransferDTO transferDTO, AccountACHRelationShip achRelation) {
         transferDTO.setRelationshipId(achRelation.getAchId());
+        transferDTO.setTransferType("ach");
+        transferDTO.setDirection("INCOMING");
+        transferDTO.setTiming("immediate");
+    }
 
+    private ResponseTransferDTO ejecutarTransferencia(TransferDTO transferDTO, String accountId) {
         try {
-            // Llamar a Alpaca con el accountId real
-            ResponseTransferDTO responseDTO = callAlpacaCreateTransferApi(transferDTO, alpacaId);
-
-            Transfer transfer = modelMapper.map(responseDTO, Transfer.class);
-            transfer.setAlpacaAccount(alpacaAccount);
-            transfer.setAccountACHRelationShip(achRelation);
-            transfer.setCreatedAt(LocalDateTime.now());
-
-            transferRepository.save(transfer);
-            return responseDTO;
-
+            return callAlpacaCreateTransferApi(transferDTO, accountId);
         } catch (IOException e) {
             throw new TransferBadRequestException("Error al comunicarse con la API de Alpaca.");
         }
@@ -105,6 +125,10 @@ public class TransferService implements ITransferService<TransferDTO> {
 
             if (response.isSuccessful()) {
                 return objectMapper.readValue(responseBody, ResponseTransferDTO.class);
+            }
+
+            if (responseBody.contains("maximum number of ACH transfers allowed is 1 per trading day in each direction")) {
+                throw new TransferBadRequestException("Ya realizaste una transferencia ACH de este tipo hoy. Solo se permite una por dia habil.");
             }
 
             throw new TransferBadRequestException("Error al crear la transferencia. Código HTTP: "

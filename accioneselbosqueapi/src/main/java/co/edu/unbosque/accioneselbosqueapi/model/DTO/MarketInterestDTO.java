@@ -11,6 +11,7 @@ public class MarketInterestDTO {
         this.nombre = nombre;
     }
 
+    //Getters y Setters
     public Long getId() {
         return id;
     }

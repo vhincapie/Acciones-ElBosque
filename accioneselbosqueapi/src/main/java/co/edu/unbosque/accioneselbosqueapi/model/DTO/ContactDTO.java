@@ -43,6 +43,7 @@ public class ContactDTO {
         this.givenName = givenName;
     }
 
+    //Getters y Setters
     public String getGivenName() {
         return givenName;
     }

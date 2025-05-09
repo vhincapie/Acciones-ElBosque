@@ -2,7 +2,6 @@ package co.edu.unbosque.accioneselbosqueapi.model.DTO;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 
 public class CreateAccountRequestDTO {
@@ -23,8 +22,6 @@ public class CreateAccountRequestDTO {
     private List<String> enabledAssets;
 
 
-
-
     public CreateAccountRequestDTO() {
     }
 
@@ -42,6 +39,7 @@ public class CreateAccountRequestDTO {
         this.enabledAssets = enabledAssets;
     }
 
+    //Getters y Setters
     public Long getMarketInterestId() {
         return marketInterestId;
     }

@@ -17,6 +17,7 @@ public class CheckoutResponseDTO {
         this.mensaje = mensaje;
     }
 
+    //Getters y Setters
     public String getUrl() {
         return url;
     }

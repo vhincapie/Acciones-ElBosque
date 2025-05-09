@@ -22,6 +22,7 @@ public class TrustedContactDTO {
         this.emailAddress = emailAddress;
     }
 
+    //Getters y Setters
     public String getGivenName() {
         return givenName;
     }

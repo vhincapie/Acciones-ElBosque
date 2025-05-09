@@ -20,7 +20,7 @@ public class AlpacaAccountUserResponseDTO {
         this.createdAt = createdAt;
     }
 
-
+    //Getters y Setters
     public String getAlpacaId() {
         return alpacaId;
     }

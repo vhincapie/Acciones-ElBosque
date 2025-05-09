@@ -1,17 +1,22 @@
 package co.edu.unbosque.accioneselbosqueapi.service.implementations;
 
-import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.*;
+import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.ExternalServiceException;
+import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.MarketDataParseException;
+import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.SymbolNotFoundException;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.MarketStatusDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.StockDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IMarketService;
-import co.edu.unbosque.accioneselbosqueapi.websocket.StockWebSocketHandler;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,12 +28,11 @@ public class MarketService implements IMarketService {
 
     private static final String FINNHUB_URL = "https://finnhub.io/api/v1/quote?symbol={symbol}&token=";
 
-    private final StockWebSocketHandler webSocketHandler;
     private final UserService userService;
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @Autowired
-    public MarketService(StockWebSocketHandler webSocketHandler, UserService userService) {
-        this.webSocketHandler = webSocketHandler;
+    public MarketService(UserService userService) {
         this.userService = userService;
     }
 
@@ -36,66 +40,74 @@ public class MarketService implements IMarketService {
     public List<StockDTO> getRelevantStocks() {
         User usuario = userService.getAuthenticatedUserEntity();
         String nombreMercado = usuario.getMercadoInteres().getNombre();
-        String[] symbols = obtenerSimbolosPorMercado(nombreMercado);
+        String[] symbols = resolverSimbolos(nombreMercado);
+
         List<StockDTO> stocks = new ArrayList<>();
-        RestTemplate restTemplate = new RestTemplate();
 
         for (String symbol : symbols) {
             try {
-                String url = FINNHUB_URL + apiKey;
-                String response = restTemplate.getForObject(url, String.class, symbol);
-
-                if (response == null || response.equals("{}")) {
-                    throw new SymbolNotFoundException("Sin datos para: " + symbol);
-                }
-
-                stocks.add(parseStockResponse(response, symbol));
-
-            } catch (SymbolNotFoundException | MarketDataParseException e) {
-                System.out.println("Advertencia: " + e.getMessage() + " [Simbolo: " + symbol + "]");
-            } catch (RestClientException e) {
-                System.out.println("Error de conexion al consultar el simbolo " + symbol + ": " + e.getMessage());
+                String response = consultarPrecioDesdeFinnhub(symbol);
+                StockDTO dto = parsearRespuesta(response, symbol);
+                stocks.add(dto);
             } catch (Exception e) {
-                System.out.println("Error inesperado al procesar el simbolo " + symbol + ": " + e.getMessage());
+                throw new RuntimeException("Error procesando el simbolo: " + symbol, e);
             }
         }
 
-        webSocketHandler.sendStockUpdates(stocks);
         return stocks;
     }
 
     @Override
     public MarketStatusDTO getMarketStatus() {
-        java.time.ZoneId nyZone = java.time.ZoneId.of("America/New_York");
-        java.time.ZonedDateTime nowNY = java.time.ZonedDateTime.now(nyZone);
-
-        int hour = nowNY.getHour();
-        int minute = nowNY.getMinute();
-
-        boolean abierto = (hour > 9 || (hour == 9 && minute >= 30)) && (hour < 16);
-
-        String mensaje = abierto ? "El mercado esta abierto" : "El mercado esta cerrado";
-
-        return new MarketStatusDTO(abierto, mensaje);
+        ZonedDateTime ahora = ZonedDateTime.now(ZoneId.of("America/New_York"));
+        boolean abierto = esDiaHabil(ahora) && estaEnHorario(ahora);
+        String estado = abierto ? "El mercado esta abierto" : "El mercado esta cerrado";
+        return new MarketStatusDTO(abierto, estado);
     }
 
+    @Override
     public StockDTO parseStockResponse(String response, String symbol) {
-        try {
-            JSONObject jsonResponse = new JSONObject(response);
+        return parsearRespuesta(response, symbol);
+    }
 
-            double currentPrice = jsonResponse.getDouble("c");
-            double highPrice = jsonResponse.getDouble("h");
-            double lowPrice = jsonResponse.getDouble("l");
-            double previousClosePrice = jsonResponse.getDouble("pc");
+    private String consultarPrecioDesdeFinnhub(String symbol) {
+        try {
+            String url = FINNHUB_URL + apiKey;
+            String response = restTemplate.getForObject(url, String.class, symbol);
+            if (response == null || response.equals("{}")) {
+                throw new SymbolNotFoundException("Sin datos para: " + symbol);
+            }
+            return response;
+        } catch (RestClientException e) {
+            throw new ExternalServiceException("Error de conexion con Finnhub para: " + symbol, e);
+        }
+    }
+
+    private StockDTO parsearRespuesta(String response, String symbol) {
+        try {
+            JSONObject json = new JSONObject(response);
+            double currentPrice = json.getDouble("c");
+            double highPrice = json.getDouble("h");
+            double lowPrice = json.getDouble("l");
+            double previousClosePrice = json.getDouble("pc");
 
             long timestamp = System.currentTimeMillis() / 1000;
-            return new StockDTO(symbol, "Descripcion de " + symbol, currentPrice, highPrice, lowPrice, previousClosePrice, timestamp);
+
+            return new StockDTO(
+                    symbol,
+                    "Descripcion de " + symbol,
+                    currentPrice,
+                    highPrice,
+                    lowPrice,
+                    previousClosePrice,
+                    timestamp
+            );
         } catch (Exception e) {
             throw new MarketDataParseException("No se pudo procesar la respuesta de Finnhub para " + symbol);
         }
     }
 
-    private String[] obtenerSimbolosPorMercado(String mercado) {
+    private String[] resolverSimbolos(String mercado) {
         return switch (mercado.toLowerCase()) {
             case "tecnología" -> new String[]{"AAPL", "MSFT", "GOOG", "NVDA"};
             case "salud" -> new String[]{"JNJ", "PFE", "MRK"};
@@ -112,6 +124,13 @@ public class MarketService implements IMarketService {
         };
     }
 
+    private boolean esDiaHabil(ZonedDateTime ahora) {
+        DayOfWeek dia = ahora.getDayOfWeek();
+        return dia != DayOfWeek.SATURDAY && dia != DayOfWeek.SUNDAY;
+    }
 
-
+    private boolean estaEnHorario(ZonedDateTime ahora) {
+        LocalTime hora = ahora.toLocalTime();
+        return hora.isAfter(LocalTime.of(9, 30)) && hora.isBefore(LocalTime.of(16, 0));
+    }
 }

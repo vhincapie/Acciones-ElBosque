@@ -13,13 +13,13 @@ public class OrderRequestDTO {
     private String qty;
 
     @JsonProperty("side")
-    private String side; // buy o sell
+    private String side;
 
     @JsonProperty("type")
-    private String type; // market, limit, stop, stop_limit
+    private String type;
 
     @JsonProperty("time_in_force")
-    private String timeInForce; // day
+    private String timeInForce;
 
     @JsonProperty("limit_price")
     private String limitPrice;

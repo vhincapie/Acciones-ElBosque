@@ -5,6 +5,7 @@ import co.edu.unbosque.accioneselbosqueapi.model.DTO.ResponseTransferDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.TransferDTO;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.ITransferService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -16,6 +17,7 @@ public class TransferController implements ITransferAPI {
         this.transferService = transferService;
     }
 
+    @PreAuthorize("hasRole('INVERSIONISTA')")
     @Override
     public ResponseEntity<ResponseTransferDTO> create(TransferDTO transferDTO) {
         ResponseTransferDTO response = transferService.create(transferDTO);
