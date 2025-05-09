@@ -7,5 +7,6 @@ import java.util.List;
 public interface IAccountACHService<T> {
 
     ResponseAccountACHDTO create(T dto);
+    List<AccountACHRelationShipDTO> getAllForAuthenticatedUser();
 
 }

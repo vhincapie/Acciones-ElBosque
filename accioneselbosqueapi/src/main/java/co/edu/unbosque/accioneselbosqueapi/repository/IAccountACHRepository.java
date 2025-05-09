@@ -11,5 +11,6 @@ import java.util.Optional;
 public interface IAccountACHRepository extends JpaRepository<AccountACHRelationShip, Long> {
 
     Optional<AccountACHRelationShip> findFirstByAlpacaAccount(AlpacaAccount alpacaAccount);
+    List<AccountACHRelationShip> findByAlpacaAccount(AlpacaAccount alpacaAccount);
 
 }

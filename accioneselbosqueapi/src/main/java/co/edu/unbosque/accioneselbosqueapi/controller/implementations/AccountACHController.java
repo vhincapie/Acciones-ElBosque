@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 
 @RestController
 public class AccountACHController implements IAccountACH {
@@ -26,5 +27,11 @@ public class AccountACHController implements IAccountACH {
         return ResponseEntity.ok(created);
     }
 
+    @PreAuthorize("hasRole('INVERSIONISTA')")
+    @Override
+    public ResponseEntity<List<AccountACHRelationShipDTO>> getAllForAuthenticatedUser() {
+        List<AccountACHRelationShipDTO> list = accountACHService.getAllForAuthenticatedUser();
+        return ResponseEntity.ok(list);
+    }
 
 }

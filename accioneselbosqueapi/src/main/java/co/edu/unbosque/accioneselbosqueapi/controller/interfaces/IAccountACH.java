@@ -16,4 +16,8 @@ public interface IAccountACH {
     @PostMapping("/ach_relationships")
     ResponseEntity<ResponseAccountACHDTO> create(@RequestBody AccountACHRelationShipDTO dto);
 
+    @GetMapping("/ach_relationships")
+    ResponseEntity<List<AccountACHRelationShipDTO>> getAllForAuthenticatedUser();
+
+
 }

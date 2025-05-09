@@ -73,6 +73,17 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
         return responseDTO;
     }
 
+    @Override
+    public List<AccountACHRelationShipDTO> getAllForAuthenticatedUser() {
+        User usuario = userService.getAuthenticatedUserEntity();
+        AlpacaAccount alpacaAccount = getAlpacaAccount(usuario);
+
+        List<AccountACHRelationShip> relaciones = achRepository.findByAlpacaAccount(alpacaAccount);
+        return relaciones.stream()
+                .map(relacion -> modelMapper.map(relacion, AccountACHRelationShipDTO.class))
+                .toList();
+    }
+
     private AlpacaAccount getAlpacaAccount(User usuario) {
         return alpacaAccountRepository.findByUserId(usuario.getId())
                 .orElseThrow(() -> new ACHBadRequestException("No se encontro la cuenta Alpaca asociada al usuario."));
