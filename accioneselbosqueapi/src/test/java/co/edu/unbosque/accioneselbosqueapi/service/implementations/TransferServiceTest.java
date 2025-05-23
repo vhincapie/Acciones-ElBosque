@@ -8,6 +8,8 @@ import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
 import co.edu.unbosque.accioneselbosqueapi.repository.IAccountACHRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.IAlpacaAccountRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.ITransferRepository;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.ITransferService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,11 +24,11 @@ import static org.mockito.Mockito.*;
 
 public class TransferServiceTest {
 
-    private TransferService transferService;
+    private ITransferService transferService;
     private ITransferRepository transferRepository;
     private IAccountACHRepository achRepository;
     private IAlpacaAccountRepository alpacaAccountRepository;
-    private UserService userService;
+    private IUserService userService;
     private ModelMapper modelMapper;
     private ObjectMapper objectMapper;
     private OkHttpClient client;
@@ -36,7 +38,7 @@ public class TransferServiceTest {
         transferRepository = mock(ITransferRepository.class);
         achRepository = mock(IAccountACHRepository.class);
         alpacaAccountRepository = mock(IAlpacaAccountRepository.class);
-        userService = mock(UserService.class);
+        userService = mock(IUserService.class);
         modelMapper = new ModelMapper();
         objectMapper = new ObjectMapper();
         client = mock(OkHttpClient.class);

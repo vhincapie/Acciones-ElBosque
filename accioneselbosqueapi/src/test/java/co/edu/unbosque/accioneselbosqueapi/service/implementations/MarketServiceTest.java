@@ -3,6 +3,8 @@ package co.edu.unbosque.accioneselbosqueapi.service.implementations;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.StockDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.MarketInterest;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IMarketService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -16,16 +18,16 @@ import static org.mockito.Mockito.*;
 
 class MarketServiceTest {
 
-    private UserService userService;
+    private IUserService userService;
     private RestTemplate restTemplate;
-    private MarketService service;
+    private IMarketService service;
 
     @BeforeEach
     void setUp() {
-        userService = mock(UserService.class);
+        userService = mock(IUserService.class);
         restTemplate = mock(RestTemplate.class);
         service = new MarketService(userService, restTemplate);
-        ReflectionTestUtils.setField(service, "apiKey", "fake_api_key"); // inyecta la apiKey privada
+        ReflectionTestUtils.setField(service, "apiKey", "fake_api_key");
     }
 
     @Test

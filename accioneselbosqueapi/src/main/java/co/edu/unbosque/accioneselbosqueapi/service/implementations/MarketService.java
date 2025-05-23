@@ -7,6 +7,7 @@ import co.edu.unbosque.accioneselbosqueapi.model.DTO.MarketStatusDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.StockDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IMarketService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,11 +31,11 @@ public class MarketService implements IMarketService {
 
     private static final String FINNHUB_URL = "https://finnhub.io/api/v1/quote?symbol={symbol}&token=";
     private static final Logger logger = LoggerFactory.getLogger(MarketService.class);
-    private final UserService userService;
+    private final IUserService userService;
     private final RestTemplate restTemplate;
 
     @Autowired
-    public MarketService(UserService userService, RestTemplate restTemplate) {
+    public MarketService(IUserService userService, RestTemplate restTemplate) {
         this.userService = userService;
         this.restTemplate = restTemplate;
     }

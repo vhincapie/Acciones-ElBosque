@@ -1,5 +1,6 @@
 package co.edu.unbosque.accioneselbosqueapi.service.implementations;
 
+
 import co.edu.unbosque.accioneselbosqueapi.exceptions.exceptions.*;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.StockDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.DTO.WatchlistItemDTO;
@@ -8,6 +9,8 @@ import co.edu.unbosque.accioneselbosqueapi.model.entity.UserSubscription;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.WatchlistItem;
 import co.edu.unbosque.accioneselbosqueapi.repository.IUserSubscriptionRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.IWatchlistRepository;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IMarketService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IWatchlistService;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -38,11 +41,11 @@ public class WatchlistService implements IWatchlistService {
 
     private final IWatchlistRepository repository;
     private final ModelMapper modelMapper;
-    private final MarketService marketService;
-    private final UserService userService;
+    private final IMarketService marketService;
+    private final IUserService userService;
     private final IUserSubscriptionRepository subscriptionRepository;
 
-    public WatchlistService(IWatchlistRepository repository, ModelMapper modelMapper, MarketService marketService, UserService userService, IUserSubscriptionRepository subscriptionRepository) {
+    public WatchlistService(IWatchlistRepository repository, ModelMapper modelMapper, IMarketService marketService, IUserService userService, IUserSubscriptionRepository subscriptionRepository) {
         this.repository = repository;
         this.modelMapper = modelMapper;
         this.marketService = marketService;
@@ -98,7 +101,7 @@ public class WatchlistService implements IWatchlistService {
         WatchlistItem item = obtenerItemValidado(id, user);
 
         if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
-            logger.warn("Actualización invalida de alertas para {}: minPrice > maxPrice", item.getSymbol());
+            logger.warn("Actualizacion invalida de alertas para {}: minPrice > maxPrice", item.getSymbol());
             throw new WatchlistBadRequestException("El precio minimo no puede ser mayor al maximo.");
         }
 
@@ -242,6 +245,7 @@ public class WatchlistService implements IWatchlistService {
                 .orElseThrow(() -> new UnauthorizedAccessException("Solo los usuarios premium pueden acceder a esta funcionalidad."));
     }
 
+    @Override
     public void validarSimbolo(String symbol) {
         String normalizedSymbol = symbol.trim().toUpperCase();
         String url = SYMBOL_LOOKUP_URL + apiKey;
@@ -276,6 +280,7 @@ public class WatchlistService implements IWatchlistService {
         }
     }
 
+    @Override
     public StockDTO findBySymbol(String symbol) {
         String url = FINNHUB_URL + apiKey;
         RestTemplate restTemplate = new RestTemplate();

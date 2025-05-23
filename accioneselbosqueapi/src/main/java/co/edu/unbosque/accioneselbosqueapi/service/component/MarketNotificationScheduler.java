@@ -5,19 +5,21 @@ import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
 import co.edu.unbosque.accioneselbosqueapi.service.implementations.EmailService;
 import co.edu.unbosque.accioneselbosqueapi.service.implementations.MarketService;
 import co.edu.unbosque.accioneselbosqueapi.service.implementations.UserService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IMarketService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
 public class MarketNotificationScheduler {
 
-    private final MarketService marketService;
+    private final IMarketService marketService;
     private final EmailService emailService;
-    private final UserService userService;
+    private final IUserService userService;
 
     private Boolean estadoAnterior = null;
 
-    public MarketNotificationScheduler(MarketService marketService, EmailService emailService, UserService userService) {
+    public MarketNotificationScheduler(MarketService marketService, EmailService emailService, IUserService userService) {
         this.marketService = marketService;
         this.emailService = emailService;
         this.userService = userService;

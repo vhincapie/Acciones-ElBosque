@@ -6,6 +6,7 @@ import co.edu.unbosque.accioneselbosqueapi.model.entity.AlpacaAccount;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
 import co.edu.unbosque.accioneselbosqueapi.repository.IAlpacaAccountRepository;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.ISaldoService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,7 @@ public class SaldoService implements ISaldoService {
 
     private static final Logger logger = LoggerFactory.getLogger(SaldoService.class);
 
-    private final UserService userService;
+    private final IUserService userService;
     private final IAlpacaAccountRepository alpacaAccountRepository;
     private final RestTemplate restTemplate;
 
@@ -36,7 +37,7 @@ public class SaldoService implements ISaldoService {
     @Value("${alpaca.broker.api.secret}")
     private String apiSecret;
 
-    public SaldoService(UserService userService, IAlpacaAccountRepository alpacaAccountRepository, RestTemplate restTemplate) {
+    public SaldoService(IUserService userService, IAlpacaAccountRepository alpacaAccountRepository, RestTemplate restTemplate) {
         this.userService = userService;
         this.alpacaAccountRepository = alpacaAccountRepository;
         this.restTemplate = restTemplate;

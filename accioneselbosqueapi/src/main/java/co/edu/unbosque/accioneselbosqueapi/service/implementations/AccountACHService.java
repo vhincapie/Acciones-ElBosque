@@ -10,6 +10,7 @@ import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
 import co.edu.unbosque.accioneselbosqueapi.repository.IAccountACHRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.IAlpacaAccountRepository;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IAccountACHService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
 import org.modelmapper.ModelMapper;
@@ -36,14 +37,14 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
     private final OkHttpClient client;
     private final IAccountACHRepository achRepository;
     private final IAlpacaAccountRepository alpacaAccountRepository;
-    private final UserService userService;
+    private final IUserService userService;
     private final ModelMapper modelMapper;
     private final ObjectMapper objectMapper;
 
     public AccountACHService(OkHttpClient client,
                              IAccountACHRepository achRepository,
                              IAlpacaAccountRepository alpacaAccountRepository,
-                             UserService userService,
+                             IUserService userService,
                              ModelMapper modelMapper,
                              ObjectMapper objectMapper) {
         this.client = client;

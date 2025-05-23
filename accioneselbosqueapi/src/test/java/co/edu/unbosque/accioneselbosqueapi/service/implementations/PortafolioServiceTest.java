@@ -7,6 +7,7 @@ import co.edu.unbosque.accioneselbosqueapi.model.entity.Order;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
 import co.edu.unbosque.accioneselbosqueapi.repository.IAlpacaAccountRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.IOrderRepository;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IPortafolioService;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,7 +20,7 @@ import static org.mockito.Mockito.*;
 
 public class PortafolioServiceTest {
 
-    private PortafolioService portafolioService;
+    private IPortafolioService portafolioService;
     private IUserService userService;
     private IAlpacaAccountRepository alpacaAccountRepository;
     private IOrderRepository orderRepository;

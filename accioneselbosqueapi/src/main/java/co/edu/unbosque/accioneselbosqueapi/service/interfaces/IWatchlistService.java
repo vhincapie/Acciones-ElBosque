@@ -11,5 +11,7 @@ public interface IWatchlistService {
     List<WatchlistItemDTO> findAll();
     void updateAlertPrices(Long id, Double minPrice, Double maxPrice);
     List<StockDTO> buscarSimbolos(String query);
+    void validarSimbolo(String symbol);
+    StockDTO findBySymbol(String symbol);
 
 }

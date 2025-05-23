@@ -12,13 +12,6 @@ import java.util.Optional;
 @Repository
 public interface IOrderRepository extends JpaRepository<Order, Long> {
 
-
-    @Query("SELECT SUM(o.netAmount) FROM Order o WHERE o.alpacaAccount = :cuenta AND o.side = 'buy' AND o.status = 'filled'")
-    Optional<BigDecimal> sumComprasEjecutadasPorCuenta(AlpacaAccount cuenta);
-
-    @Query("SELECT SUM(o.netAmount) FROM Order o WHERE o.alpacaAccount = :cuenta AND o.side = 'sell' AND o.status = 'filled'")
-    Optional<BigDecimal> sumVentasEjecutadasPorCuenta(AlpacaAccount cuenta);
-
     List<Order> findByAlpacaAccountAndStatus(AlpacaAccount account, String status);
 
 

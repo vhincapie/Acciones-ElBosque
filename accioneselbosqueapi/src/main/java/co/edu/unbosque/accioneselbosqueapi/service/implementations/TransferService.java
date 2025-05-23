@@ -12,6 +12,7 @@ import co.edu.unbosque.accioneselbosqueapi.repository.IAccountACHRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.IAlpacaAccountRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.ITransferRepository;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.ITransferService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
 import org.modelmapper.ModelMapper;
@@ -39,7 +40,7 @@ public class TransferService implements ITransferService<TransferDTO> {
     private final ITransferRepository transferRepository;
     private final IAccountACHRepository achRepository;
     private final IAlpacaAccountRepository alpacaAccountRepository;
-    private final UserService userService;
+    private final IUserService userService;
     private final ModelMapper modelMapper;
     private final ObjectMapper objectMapper;
 
@@ -47,7 +48,7 @@ public class TransferService implements ITransferService<TransferDTO> {
                            ITransferRepository transferRepository,
                            IAccountACHRepository achRepository,
                            IAlpacaAccountRepository alpacaAccountRepository,
-                           UserService userService,
+                           IUserService userService,
                            ModelMapper modelMapper,
                            ObjectMapper objectMapper) {
         this.client = client;

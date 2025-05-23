@@ -8,6 +8,7 @@ import co.edu.unbosque.accioneselbosqueapi.repository.IMarketInterestRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.IUserRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.IUserSubscriptionRepository;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IAlpacaService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import org.junit.jupiter.api.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.Authentication;
@@ -31,8 +32,7 @@ class UserServiceTest {
     private EmailService emailService;
     private ModelMapper modelMapper;
     private IAlpacaService alpacaService;
-
-    private UserService userService;
+    private IUserService userService;
 
     @BeforeEach
     void setUp() {

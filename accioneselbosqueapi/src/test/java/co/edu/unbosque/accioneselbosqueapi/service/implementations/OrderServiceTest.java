@@ -9,7 +9,10 @@ import co.edu.unbosque.accioneselbosqueapi.model.entity.AlpacaAccount;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
 import co.edu.unbosque.accioneselbosqueapi.repository.IAlpacaAccountRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.IOrderRepository;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IOrderService;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.ISaldoService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IWatchlistService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,12 +25,12 @@ import static org.mockito.Mockito.*;
 
 public class OrderServiceTest {
 
-    private OrderService orderService;
+    private IOrderService orderService;
     private IOrderRepository orderRepository;
     private IAlpacaAccountRepository alpacaAccountRepository;
-    private UserService userService;
+    private IUserService userService;
     private ISaldoService saldoService;
-    private WatchlistService watchlistService;
+    private IWatchlistService watchlistService;
     private OkHttpClient client;
     private ObjectMapper objectMapper;
     private ModelMapper modelMapper;
@@ -37,9 +40,9 @@ public class OrderServiceTest {
     void setUp() {
         orderRepository = mock(IOrderRepository.class);
         alpacaAccountRepository = mock(IAlpacaAccountRepository.class);
-        userService = mock(UserService.class);
+        userService = mock(IUserService.class);
         saldoService = mock(ISaldoService.class);
-        watchlistService = mock(WatchlistService.class);
+        watchlistService = mock(IWatchlistService.class);
         client = mock(OkHttpClient.class);
         objectMapper = new ObjectMapper();
         modelMapper = new ModelMapper();

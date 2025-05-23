@@ -9,6 +9,7 @@ import co.edu.unbosque.accioneselbosqueapi.model.entity.UserSubscription;
 import co.edu.unbosque.accioneselbosqueapi.repository.IUserRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.IUserSubscriptionRepository;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserSubscriptionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
@@ -26,7 +27,7 @@ class UserSubscriptionServiceTest {
     private IUserSubscriptionRepository subscriptionRepository;
     private IUserRepository userRepository;
     private ModelMapper modelMapper;
-    private UserSubscriptionService service;
+    private IUserSubscriptionService service;
 
     @BeforeEach
     void setUp() {

@@ -6,6 +6,7 @@ import co.edu.unbosque.accioneselbosqueapi.model.entity.WatchlistItem;
 import co.edu.unbosque.accioneselbosqueapi.repository.IWatchlistRepository;
 import co.edu.unbosque.accioneselbosqueapi.service.implementations.EmailService;
 import co.edu.unbosque.accioneselbosqueapi.service.implementations.WatchlistService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IWatchlistService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -19,13 +20,13 @@ import java.util.Map;
 public class WatchlistNotificationScheduler {
 
     private final IWatchlistRepository watchlistRepository;
-    private final WatchlistService watchlistService;
+    private final IWatchlistService watchlistService;
     private final EmailService emailService;
 
     private final Map<Long, LocalDateTime> alertasEnviadas = new HashMap<>();
 
     public WatchlistNotificationScheduler(IWatchlistRepository watchlistRepository,
-                                          WatchlistService watchlistService,
+                                          IWatchlistService watchlistService,
                                           EmailService emailService) {
         this.watchlistRepository = watchlistRepository;
         this.watchlistService = watchlistService;

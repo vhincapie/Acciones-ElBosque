@@ -10,6 +10,8 @@ import co.edu.unbosque.accioneselbosqueapi.repository.IAlpacaAccountRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.IOrderRepository;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IOrderService;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.ISaldoService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IWatchlistService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
 import org.modelmapper.ModelMapper;
@@ -40,21 +42,21 @@ public class OrderService implements IOrderService<OrderRequestDTO> {
     private final OkHttpClient client;
     private final IOrderRepository orderRepository;
     private final IAlpacaAccountRepository alpacaAccountRepository;
-    private final UserService userService;
+    private final IUserService userService;
     private final ModelMapper modelMapper;
     private final ObjectMapper objectMapper;
     private final ISaldoService saldoService;
-    private final WatchlistService watchlistService;
+    private final IWatchlistService watchlistService;
     private final EmailService emailService;
 
     public OrderService(OkHttpClient client,
                         IOrderRepository orderRepository,
                         IAlpacaAccountRepository alpacaAccountRepository,
-                        UserService userService,
+                        IUserService userService,
                         ModelMapper modelMapper,
                         ObjectMapper objectMapper,
                         ISaldoService saldoService,
-                        WatchlistService watchlistService,
+                        IWatchlistService watchlistService,
                         EmailService emailService) {
         this.client = client;
         this.orderRepository = orderRepository;

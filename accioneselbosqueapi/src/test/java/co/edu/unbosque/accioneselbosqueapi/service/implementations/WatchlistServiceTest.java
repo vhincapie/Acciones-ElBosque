@@ -8,6 +8,9 @@ import co.edu.unbosque.accioneselbosqueapi.model.entity.UserSubscription;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.WatchlistItem;
 import co.edu.unbosque.accioneselbosqueapi.repository.IUserSubscriptionRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.IWatchlistRepository;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IMarketService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IWatchlistService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
@@ -24,17 +27,17 @@ class WatchlistServiceTest {
 
     private IWatchlistRepository watchlistRepository;
     private IUserSubscriptionRepository subscriptionRepository;
-    private MarketService marketService;
-    private UserService userService;
+    private IMarketService marketService;
+    private IUserService userService;
     private ModelMapper modelMapper;
-    private WatchlistService service;
+    private IWatchlistService service;
 
     @BeforeEach
     void setUp() {
         watchlistRepository = mock(IWatchlistRepository.class);
         subscriptionRepository = mock(IUserSubscriptionRepository.class);
-        marketService = mock(MarketService.class);
-        userService = mock(UserService.class);
+        marketService = mock(IMarketService.class);
+        userService = mock(IUserService.class);
         modelMapper = new ModelMapper();
 
         modelMapper.typeMap(WatchlistItem.class, WatchlistItemDTO.class)

@@ -6,6 +6,7 @@ import co.edu.unbosque.accioneselbosqueapi.model.entity.AlpacaAccount;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
 import co.edu.unbosque.accioneselbosqueapi.repository.IAccountACHRepository;
 import co.edu.unbosque.accioneselbosqueapi.repository.IAlpacaAccountRepository;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.OkHttpClient;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +25,7 @@ class AccountACHServiceTest {
     private AccountACHService service;
     private IAccountACHRepository achRepository;
     private IAlpacaAccountRepository alpacaAccountRepository;
-    private UserService userService;
+    private IUserService userService;
     private ModelMapper modelMapper;
     private ObjectMapper objectMapper;
 
@@ -32,7 +33,7 @@ class AccountACHServiceTest {
     void setUp() {
         achRepository = mock(IAccountACHRepository.class);
         alpacaAccountRepository = mock(IAlpacaAccountRepository.class);
-        userService = mock(UserService.class);
+        userService = mock(IUserService.class);
         modelMapper = new ModelMapper();
         objectMapper = new ObjectMapper();
         OkHttpClient httpClient = mock(OkHttpClient.class);

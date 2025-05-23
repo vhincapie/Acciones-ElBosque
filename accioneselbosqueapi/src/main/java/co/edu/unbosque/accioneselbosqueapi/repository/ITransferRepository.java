@@ -13,14 +13,5 @@ import java.util.Optional;
 @Repository
 public interface ITransferRepository extends JpaRepository<Transfer, Long> {
 
-    @Query("SELECT SUM(t.amount) FROM Transfer t WHERE t.alpacaAccount = :account AND t.type = :type AND t.status = :status")
-    Optional<BigDecimal> sumByAlpacaAccountAndTypeAndStatus(
-            @Param("account") AlpacaAccount account,
-            @Param("type") String type,
-            @Param("status") String status
-    );
-
-    List<Transfer> findByAlpacaAccountAndStatusNot(AlpacaAccount cuenta, String status);
-
 
 }

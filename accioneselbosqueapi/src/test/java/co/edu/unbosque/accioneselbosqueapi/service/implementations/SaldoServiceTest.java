@@ -5,6 +5,8 @@ import co.edu.unbosque.accioneselbosqueapi.model.DTO.TradingDetailDTO;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.AlpacaAccount;
 import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
 import co.edu.unbosque.accioneselbosqueapi.repository.IAlpacaAccountRepository;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.ISaldoService;
+import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpEntity;
@@ -20,14 +22,14 @@ import static org.mockito.Mockito.*;
 
 class SaldoServiceTest {
 
-    private SaldoService saldoService;
-    private UserService userService;
+    private ISaldoService saldoService;
+    private IUserService userService;
     private IAlpacaAccountRepository alpacaAccountRepository;
     private RestTemplate restTemplate;
 
     @BeforeEach
     void setUp() {
-        userService = mock(UserService.class);
+        userService = mock(IUserService.class);
         alpacaAccountRepository = mock(IAlpacaAccountRepository.class);
         restTemplate = mock(RestTemplate.class);
         saldoService = new SaldoService(userService, alpacaAccountRepository, restTemplate);
