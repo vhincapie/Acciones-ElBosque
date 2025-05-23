@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "alpaca_account")
 public class AlpacaAccount {
@@ -29,64 +31,47 @@ public class AlpacaAccount {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    public AlpacaAccount() {
-    }
+    @Column(name = "buying_power")
+    private BigDecimal buyingPower;
 
-    public AlpacaAccount(Long id, String alpacaId, String status, String currency,  User user, LocalDateTime createdAt) {
+    public AlpacaAccount() {}
+
+    public AlpacaAccount(Long id, String alpacaId, String status, String currency, User user, LocalDateTime createdAt, BigDecimal buyingPower) {
         this.id = id;
         this.alpacaId = alpacaId;
         this.status = status;
         this.currency = currency;
         this.user = user;
         this.createdAt = createdAt;
+        this.buyingPower = buyingPower;
     }
 
-    //Getters y Setters
-    public Long getId() {
-        return id;
-    }
+    // Getters y setters
+    public Long getId() { return id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public void setId(Long id) { this.id = id; }
 
-    public String getAlpacaId() {
-        return alpacaId;
-    }
+    public String getAlpacaId() { return alpacaId; }
 
-    public void setAlpacaId(String alpacaId) {
-        this.alpacaId = alpacaId;
-    }
+    public void setAlpacaId(String alpacaId) { this.alpacaId = alpacaId; }
 
-    public String getStatus() {
-        return status;
-    }
+    public String getStatus() { return status; }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    public void setStatus(String status) { this.status = status; }
 
-    public String getCurrency() {
-        return currency;
-    }
+    public String getCurrency() { return currency; }
 
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
+    public void setCurrency(String currency) { this.currency = currency; }
 
-    public User getUser() {
-        return user;
-    }
+    public User getUser() { return user; }
 
-    public void setUser(User user) {
-        this.user = user;
-    }
+    public void setUser(User user) { this.user = user; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public BigDecimal getBuyingPower() { return buyingPower; }
+
+    public void setBuyingPower(BigDecimal buyingPower) { this.buyingPower = buyingPower; }
 }

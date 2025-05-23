@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@RequestMapping("/api/suscripcion")
+@RequestMapping("/api/suscripcion/v1")
 public interface IUserSubscriptionAPI {
 
     @GetMapping("/checkout")

@@ -8,6 +8,8 @@ import org.modelmapper.config.Configuration.AccessLevel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.math.BigDecimal;
+
 @Configuration
 public class ModelMapperConfiguration {
 
@@ -16,7 +18,8 @@ public class ModelMapperConfiguration {
         ModelMapper modelMapper = new ModelMapper();
         modelMapper.getConfiguration()
                 .setFieldMatchingEnabled(true)
-                .setFieldAccessLevel(AccessLevel.PRIVATE);
+                .setFieldAccessLevel(AccessLevel.PRIVATE)
+                .setAmbiguityIgnored(true);
         cargarMapeos(modelMapper);
         return modelMapper;
     }
@@ -122,21 +125,44 @@ public class ModelMapperConfiguration {
 
 
         // TransferDTO → Transfer
-        TypeMap<ResponseTransferDTO, Transfer> transferMap = modelMapper.createTypeMap(ResponseTransferDTO.class, Transfer.class);
-        transferMap.addMappings(m -> {
-            m.map(ResponseTransferDTO::getType, Transfer::setType);
-            m.map(ResponseTransferDTO::getAmount, Transfer::setAmount);
-            m.map(ResponseTransferDTO::getCurrency, Transfer::setCurrency);
-            m.skip(Transfer::setId);
-        });
+        modelMapper.createTypeMap(ResponseTransferDTO.class, Transfer.class)
+                .addMappings(mapper -> {
+                    mapper.skip(Transfer::setId); // 🔒 evita conflicto String → Long
+                    mapper.map(ResponseTransferDTO::getId, Transfer::setAlpacaTransferId);
+                    mapper.map(ResponseTransferDTO::getType, Transfer::setType);
+                    mapper.map(ResponseTransferDTO::getAmount, Transfer::setAmount);
+                    mapper.map(ResponseTransferDTO::getCurrency, Transfer::setCurrency);
+                    mapper.map(ResponseTransferDTO::getStatus, Transfer::setStatus);
+                });
 
         // OrderDTO → Order
-        TypeMap<OrderResponseDTO, Order> orderMap = modelMapper.createTypeMap(OrderResponseDTO.class, Order.class);
-        orderMap.addMappings(m -> {
-            m.skip(Order::setId);
-            m.skip(Order::setTransactionAmount);
-            m.skip(Order::setCommissionAmount);
-            m.skip(Order::setNetAmount);
-        });
+        modelMapper.createTypeMap(OrderResponseDTO.class, Order.class)
+                .addMappings(m -> {
+                    m.skip(Order::setId);
+                    m.map(OrderResponseDTO::getId, Order::setAlpacaOrderId);
+                    m.map(OrderResponseDTO::getSymbol, Order::setSymbol);
+                    m.map(OrderResponseDTO::getOrderType, Order::setOrderType);
+                    m.map(OrderResponseDTO::getSide, Order::setSide);
+                    m.map(OrderResponseDTO::getTimeInForce, Order::setTimeInForce);
+                    m.map(OrderResponseDTO::getAssetClass, Order::setAssetClass);
+                    m.map(OrderResponseDTO::getStatus, Order::setStatus);
+
+                    m.map(src -> src.getQty() != null ? new BigDecimal(src.getQty()) : null, Order::setQty);
+                    m.map(src -> src.getLimitPrice() != null ? new BigDecimal(src.getLimitPrice()) : null, Order::setLimitPrice);
+                    m.map(src -> src.getStopPrice() != null ? new BigDecimal(src.getStopPrice()) : null, Order::setStopPrice);
+
+                    m.skip(Order::setTransactionAmount);
+                    m.skip(Order::setCommissionAmount);
+                    m.skip(Order::setNetAmount);
+                });
+
+        // AccountTradingDetailDTO → AlpacaAccount
+        modelMapper.createTypeMap(TradingDetailDTO.class, AlpacaAccount.class)
+                .addMappings(mapper -> {
+                    mapper.map(
+                            src -> src.getBuyingPower() != null ? new BigDecimal(src.getBuyingPower()) : null,
+                            AlpacaAccount::setBuyingPower
+                    );
+                });
     }
 }

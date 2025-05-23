@@ -9,6 +9,8 @@ import co.edu.unbosque.accioneselbosqueapi.repository.IOrderRepository;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IPortafolioService;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 @Service
 public class PortafolioService implements IPortafolioService {
 
+    private static final Logger logger = LoggerFactory.getLogger(PortafolioService.class);
     private final IUserService userService;
     private final IAlpacaAccountRepository alpacaAccountRepository;
     private final IOrderRepository orderRepository;
@@ -31,22 +34,42 @@ public class PortafolioService implements IPortafolioService {
 
     @Override
     public Map<String, List<PortafolioItemDTO>> getResumenAcciones() {
+        var user = userService.getAuthenticatedUserEntity();
+        logger.info("Generando resumen de acciones para el usuario ID: {}", user.getId());
+
         AlpacaAccount cuenta = obtenerCuentaAlpacaDelUsuario();
+        logger.debug("Cuenta Alpaca encontrada: {}", cuenta.getAlpacaId());
+
         List<Order> ordenes = obtenerOrdenesEjecutadas(cuenta);
+        logger.info("Ordenes ejecutadas encontradas: {}", ordenes.size());
+
         Map<String, List<Order>> agrupadas = agruparOrdenesPorSimbolo(ordenes);
-        return construirResumenSeparado(agrupadas);
+        logger.debug("Ordenes agrupadas por símbolo: {}", agrupadas.keySet());
+
+        Map<String, List<PortafolioItemDTO>> resumen = construirResumenSeparado(agrupadas);
+        logger.info("Resumen generado: {} acciones actuales, {} vendidas",
+                resumen.get("actuales").size(), resumen.get("vendidas").size());
+
+        return resumen;
     }
 
 
     private AlpacaAccount obtenerCuentaAlpacaDelUsuario() {
         var user = userService.getAuthenticatedUserEntity();
         return alpacaAccountRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new UsuarioNoEncontradoException("Cuenta Alpaca no encontrada."));
+                .orElseThrow(() -> {
+                    logger.error("Cuenta Alpaca no encontrada para el usuario ID: {}", user.getId());
+                    return new UsuarioNoEncontradoException("Cuenta Alpaca no encontrada.");
+                });
     }
 
 
     private List<Order> obtenerOrdenesEjecutadas(AlpacaAccount cuenta) {
-        return orderRepository.findByAlpacaAccountAndStatus(cuenta, "filled");
+        List<Order> ordenes = orderRepository.findByAlpacaAccountAndStatus(cuenta, "filled");
+        if (ordenes.isEmpty()) {
+            logger.warn("No se encontraron ordenes ejecutadas para la cuenta Alpaca: {}", cuenta.getAlpacaId());
+        }
+        return ordenes;
     }
 
 
@@ -93,6 +116,7 @@ public class PortafolioService implements IPortafolioService {
                 );
                 dtoActual.setSide("actual");
                 actuales.add(dtoActual);
+                logger.debug("Accion actual agregada: {} con {} unidades", symbol, cantidadActual);
             }
 
             if (totalVendidas > 0) {
@@ -106,6 +130,7 @@ public class PortafolioService implements IPortafolioService {
                 );
                 dtoVendida.setSide("vendida");
                 vendidas.add(dtoVendida);
+                logger.debug("Accion vendida agregada: {} con {} unidades", symbol, totalVendidas);
             }
         }
 

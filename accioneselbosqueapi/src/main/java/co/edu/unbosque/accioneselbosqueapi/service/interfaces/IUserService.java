@@ -5,6 +5,8 @@ import co.edu.unbosque.accioneselbosqueapi.model.entity.User;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
+import java.util.List;
+
 
 public interface IUserService extends UserDetailsService {
 
@@ -16,4 +18,5 @@ public interface IUserService extends UserDetailsService {
     User getAuthenticatedUserEntity();
     UsuarioPanelResponseDTO getPanelInfo();
 
+    List<User> obtenerTodosLosUsuariosInversionistas();
 }

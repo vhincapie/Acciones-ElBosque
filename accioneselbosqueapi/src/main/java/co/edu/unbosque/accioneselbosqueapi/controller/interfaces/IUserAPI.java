@@ -4,7 +4,7 @@ import co.edu.unbosque.accioneselbosqueapi.model.DTO.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@RequestMapping("/api/auth")
+@RequestMapping("/api/auth/v1")
 public interface IUserAPI {
 
     @PostMapping("/register")

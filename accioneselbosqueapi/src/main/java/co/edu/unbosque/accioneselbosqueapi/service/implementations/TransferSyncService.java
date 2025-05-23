@@ -9,7 +9,8 @@ import okhttp3.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.List;
 @Service
 public class TransferSyncService {
 
+    private static final Logger logger = LoggerFactory.getLogger(TransferSyncService.class);
     private final ITransferRepository transferRepository;
     private final OkHttpClient client;
     private final ObjectMapper objectMapper;
@@ -37,15 +39,20 @@ public class TransferSyncService {
 
     @Scheduled(fixedRate = 300000)
     public void sincronizarEstadosTransferencias() {
+        logger.info("Iniciando sincronizacion de estados de transferencias...");
         List<Transfer> transferencias = transferRepository.findAll();
 
         for (Transfer transferencia : transferencias) {
-            if (!esTransferenciaValida(transferencia)) continue;
-
+            if (!esTransferenciaValida(transferencia)) {
+                logger.debug("Transferencia invalida omitida. ID interna: {}", transferencia.getId());
+                continue;
+            }
             try {
+                logger.debug("Consultando estado para transferencia ID Alpaca: {}", transferencia.getAlpacaTransferId());
                 JsonNode listaTransferencias = consultarTransferenciasDesdeAlpaca(transferencia);
                 actualizarEstadoSiCambio(transferencia, listaTransferencias);
             } catch (Exception e) {
+                logger.error("Error al sincronizar transferencia ID {}: {}", transferencia.getId(), e.getMessage(), e);
                 throw new TransferSyncException("Error al sincronizar transferencia ID " + transferencia.getId(), e);
             }
         }
@@ -68,10 +75,14 @@ public class TransferSyncService {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
+                logger.warn("Fallo al consultar transferencias para cuenta {}. Código HTTP: {}",
+                        alpacaId, response.code());
                 throw new TransferSyncException("Respuesta invalida al consultar transferencias de Alpaca (HTTP " + response.code() + ")");
             }
 
-            return objectMapper.readTree(response.body().string());
+            String body = response.body().string();
+            logger.debug("Respuesta recibida de Alpaca para cuenta {}: {}", alpacaId, body);
+            return objectMapper.readTree(body);
         }
     }
 
@@ -84,10 +95,14 @@ public class TransferSyncService {
 
             String nuevoEstado = json.get("status").asText();
             if (!transferencia.getStatus().equalsIgnoreCase(nuevoEstado)) {
+                logger.info("Cambio de estado detectado para transferencia {}: de '{}' a '{}'",
+                        transferencia.getId(), transferencia.getStatus(), nuevoEstado);
                 transferencia.setStatus(nuevoEstado);
                 transferRepository.save(transferencia);
+            } else {
+                logger.debug("Estado sin cambios para transferencia ID {} (estado actual: {})",
+                        transferencia.getId(), transferencia.getStatus());
             }
-
             break;
         }
     }

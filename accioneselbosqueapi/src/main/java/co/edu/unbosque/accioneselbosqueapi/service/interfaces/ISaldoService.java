@@ -1,9 +1,10 @@
 package co.edu.unbosque.accioneselbosqueapi.service.interfaces;
 
-import java.math.BigDecimal;
+import co.edu.unbosque.accioneselbosqueapi.model.DTO.TradingDetailDTO;
+
 
 public interface ISaldoService {
 
-    BigDecimal obtenerSaldoUsuarioActual();
+    TradingDetailDTO obtenerSaldoUsuarioActual();
 
 }

@@ -11,6 +11,8 @@ import co.edu.unbosque.accioneselbosqueapi.repository.IWatchlistRepository;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IWatchlistService;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ public class WatchlistService implements IWatchlistService {
     @Value("${finnhub.api.key}")
     private String apiKey;
 
+    private static final Logger logger = LoggerFactory.getLogger(WatchlistService.class);
     private static final String SYMBOL_LOOKUP_URL = "https://finnhub.io/api/v1/stock/symbol?exchange=US&token=";
     private static final String SYMBOL_SEARCH_URL = "https://finnhub.io/api/v1/search?q=";
     private static final String SYMBOL_SYMBOL_URL = "https://finnhub.io/api/v1/quote?symbol=";
@@ -54,6 +57,7 @@ public class WatchlistService implements IWatchlistService {
         validarSimbolo(dto.getSymbol());
 
         if (repository.existsByUserAndSymbol(user, dto.getSymbol())) {
+            logger.warn("Simbolo duplicado en watchlist: {}", dto.getSymbol());
             throw new WatchlistBadRequestException("Este simbolo ya esta registrado en tu watchlist.");
         }
 
@@ -65,6 +69,7 @@ public class WatchlistService implements IWatchlistService {
         entity.setUser(user);
 
         WatchlistItem saved = repository.save(entity);
+        logger.info("Simbolo {} agregado a watchlist del usuario: {}", dto.getSymbol(), user.getUsername());
         return modelMapper.map(saved, WatchlistItemDTO.class);
     }
 
@@ -73,16 +78,18 @@ public class WatchlistService implements IWatchlistService {
         User user = validarUsuarioPremium();
         WatchlistItem item = obtenerItemValidado(id, user);
         repository.deleteById(id);
+        logger.info("Simbolo {} eliminado de watchlist del usuario: {}", item.getSymbol(), user.getUsername());
     }
 
     @Override
     public List<WatchlistItemDTO> findAll() {
         User user = validarUsuarioPremium();
-
-        return repository.findAll().stream()
+        List<WatchlistItemDTO> lista = repository.findAll().stream()
                 .filter(item -> item.getUser().getId().equals(user.getId()))
-                .map(item -> mapearConPrecios(item))
+                .map(this::mapearConPrecios)
                 .collect(Collectors.toList());
+        logger.info("Watchlist consultada para usuario: {}. Total simbolos: {}", user.getUsername(), lista.size());
+        return lista;
     }
 
     @Override
@@ -91,17 +98,20 @@ public class WatchlistService implements IWatchlistService {
         WatchlistItem item = obtenerItemValidado(id, user);
 
         if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
+            logger.warn("Actualización invalida de alertas para {}: minPrice > maxPrice", item.getSymbol());
             throw new WatchlistBadRequestException("El precio minimo no puede ser mayor al maximo.");
         }
 
         item.setAlertMinPrice(minPrice);
         item.setAlertMaxPrice(maxPrice);
         repository.save(item);
+        logger.info("Precios de alerta actualizados para simbolo: {}", item.getSymbol());
     }
 
     @Override
     public List<StockDTO> buscarSimbolos(String query) {
         RestTemplate restTemplate = new RestTemplate();
+        logger.debug("Busqueda de simbolos iniciada con query: {}", query);
         List<StockDTO> suggestions = new ArrayList<>();
         String lowerQuery = query.toLowerCase();
 
@@ -115,6 +125,7 @@ public class WatchlistService implements IWatchlistService {
     private List<StockDTO> buscarPorNombre(RestTemplate restTemplate, String query) {
         List<StockDTO> resultados = new ArrayList<>();
         try {
+            logger.debug("Buscando por nombre: {}", query);
             String searchUrl = SYMBOL_SEARCH_URL + query + "&token=" + apiKey;
             String response = restTemplate.getForObject(searchUrl, String.class);
             JSONArray results = new JSONObject(response).getJSONArray("result");
@@ -130,6 +141,7 @@ public class WatchlistService implements IWatchlistService {
                 }
             }
         } catch (Exception e) {
+            logger.error("Error al buscar simbolos por nombre: {}", e.getMessage());
             throw new MarketServiceUnavailableException("Error al buscar por simbolo en Finnhub: " + e.getMessage());
         }
         return resultados;
@@ -138,6 +150,7 @@ public class WatchlistService implements IWatchlistService {
     private List<StockDTO> buscarPorMic(RestTemplate restTemplate, String lowerQuery) {
         List<StockDTO> resultados = new ArrayList<>();
         try {
+            logger.debug("Buscando por MIC con query: {}", lowerQuery);
             String response = restTemplate.getForObject(SYMBOL_LOOKUP_URL + apiKey, String.class);
             JSONArray array = new JSONArray(response);
 
@@ -157,6 +170,7 @@ public class WatchlistService implements IWatchlistService {
                 }
             }
         } catch (Exception e) {
+            logger.error("Error al buscar simbolos por MIC: {}", e.getMessage());
             throw new MarketServiceUnavailableException("No se pudieron buscar simbolos: " + e.getMessage());
         }
         return resultados;
@@ -180,6 +194,7 @@ public class WatchlistService implements IWatchlistService {
             dto.setLowPrice(precios.getLowPrice());
             dto.setPreviousClosePrice(precios.getPreviousClosePrice());
         } catch (Exception e) {
+            logger.error("Error cargando precios para simbolo {}: {}", item.getSymbol(), e.getMessage());
             throw new StockDataUnavailableException("No se pudieron cargar precios para " + item.getSymbol(), e);
         }
         return dto;
@@ -233,6 +248,7 @@ public class WatchlistService implements IWatchlistService {
         RestTemplate restTemplate = new RestTemplate();
 
         try {
+            logger.debug("Validando símbolo en Finnhub: {}", symbol);
             String response = restTemplate.getForObject(url, String.class);
             JSONArray array = new JSONArray(response);
 
@@ -255,6 +271,7 @@ public class WatchlistService implements IWatchlistService {
             }
 
         } catch (Exception e) {
+            logger.error("Error al validar símbolo: {}", e.getMessage());
             throw new MarketServiceUnavailableException("Error al validar simbolo en Finnhub: " + e.getMessage());
         }
     }
@@ -264,6 +281,7 @@ public class WatchlistService implements IWatchlistService {
         RestTemplate restTemplate = new RestTemplate();
 
         try {
+            logger.debug("Consultando cotizacion para simbolo: {}", symbol);
             String response = restTemplate.getForObject(url, String.class, symbol);
 
             if (response == null || response.equals("{}")) {
@@ -273,10 +291,13 @@ public class WatchlistService implements IWatchlistService {
             return marketService.parseStockResponse(response, symbol);
 
         } catch (HttpClientErrorException.TooManyRequests e) {
+            logger.warn("Limite de API alcanzado consultando: {}", symbol);
             throw new MarketServiceUnavailableException("Limite de uso de API alcanzado. Intenta nuevamente mas tarde.");
         } catch (RestClientException e) {
+            logger.error("Error de conexión al consultar simbolo {}: {}", symbol, e.getMessage());
             throw new MarketConnectionException("Error de conexion al consultar el simbolo: " + symbol);
         } catch (Exception e) {
+            logger.error("Error inesperado al consultar simbolo {}: {}", symbol, e.getMessage());
             throw new MarketServiceUnavailableException("Error inesperado al consultar el simbolo " + symbol + ": " + e.getMessage());
         }
     }

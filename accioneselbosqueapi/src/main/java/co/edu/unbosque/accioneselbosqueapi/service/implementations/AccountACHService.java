@@ -30,6 +30,7 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
     @Value("${alpaca.broker.api.secret}")
     private String apiSecret;
 
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AccountACHService.class);
     private static final String API_URL = "https://broker-api.sandbox.alpaca.markets/v1/accounts/{account_id}/ach_relationships";
 
     private final OkHttpClient client;
@@ -56,6 +57,7 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
     @Override
     public ResponseAccountACHDTO create(AccountACHRelationShipDTO dto) {
         User usuario = userService.getAuthenticatedUserEntity();
+        logger.info("Creando relacion ACH para usuario: {}", usuario.getUsername());
         AlpacaAccount alpacaAccount = getAlpacaAccount(usuario);
         String alpacaId = alpacaAccount.getAlpacaId();
 
@@ -70,12 +72,14 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
         ach.setCreatedAt(LocalDateTime.now());
 
         achRepository.save(ach);
+        logger.info("Relacion ACH guardada en base de datos para usuario: {}", usuario.getUsername());
         return responseDTO;
     }
 
     @Override
     public List<AccountACHRelationShipDTO> getAllForAuthenticatedUser() {
         User usuario = userService.getAuthenticatedUserEntity();
+        logger.info("Consultando relaciones ACH para usuario: {}", usuario.getUsername());
         AlpacaAccount alpacaAccount = getAlpacaAccount(usuario);
 
         List<AccountACHRelationShip> relaciones = achRepository.findByAlpacaAccount(alpacaAccount);
@@ -111,18 +115,28 @@ public class AccountACHService implements IAccountACHService<AccountACHRelationS
                 .addHeader("Authorization", "Basic " + base64Credentials)
                 .build();
 
+        logger.info("Enviando solicitud de creacion de ACH a Alpaca para cuenta: {}", accountId);
         try (Response response = client.newCall(request).execute()) {
             String responseBody = response.body() != null ? response.body().string() : "";
 
             if (response.isSuccessful()) {
-                return objectMapper.readValue(responseBody, ResponseAccountACHDTO.class);
+                ResponseAccountACHDTO responseDTO = objectMapper.readValue(responseBody, ResponseAccountACHDTO.class);
+                logger.info("Relacion ACH creada exitosamente en Alpaca con ID: {}", responseDTO.getId());
+                return responseDTO;
             }
 
-            throw switch (response.code()) {
-                case 400 -> new ACHBadRequestException("Solicitud invalida. Verifica los datos enviados.");
-                case 409 -> new ACHConflictException("Ya existe una relacion bancaria para esta cuenta.");
-                default -> new ACHBadRequestException("Fallo al crear la relación bancaria en Alpaca.");
-            };
+            switch (response.code()) {
+                case 400:
+                    logger.warn("Solicitud invalida al crear ACH para cuenta {}. Respuesta: {}", accountId, responseBody);
+                    throw new ACHBadRequestException("Solicitud invalida. Verifica los datos enviados.");
+                case 409:
+                    logger.warn("Conflicto: ya existe una relacion ACH para la cuenta {}", accountId);
+                    throw new ACHConflictException("Ya existe una relacion bancaria para esta cuenta.");
+                default:
+                    logger.error("Error inesperado al crear ACH para cuenta {}. Código: {}, Respuesta: {}", accountId, response.code(), responseBody);
+                    throw new ACHBadRequestException("Fallo al crear la relación bancaria en Alpaca.");
+            }
+
         }
     }
 

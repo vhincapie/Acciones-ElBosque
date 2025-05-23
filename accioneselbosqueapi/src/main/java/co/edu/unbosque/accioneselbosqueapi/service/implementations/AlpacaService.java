@@ -31,14 +31,17 @@ public class AlpacaService implements IAlpacaService {
     @Value("${alpaca.broker.account-url}")
     private String accountUrl;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final IAlpacaAccountRepository alpacaAccountRepository;
     private final IUserRepository userRepository;
     private final ModelMapper modelMapper;
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AlpacaService.class);
 
-    public AlpacaService(IAlpacaAccountRepository alpacaAccountRepository,
+
+    public AlpacaService(RestTemplate restTemplate, IAlpacaAccountRepository alpacaAccountRepository,
                          IUserRepository userRepository,
                          ModelMapper modelMapper) {
+        this.restTemplate = restTemplate;
         this.alpacaAccountRepository = alpacaAccountRepository;
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
@@ -46,6 +49,8 @@ public class AlpacaService implements IAlpacaService {
 
     @Override
     public AlpacaAccountResponseDTO crearCuenta(CreateAccountRequestDTO request) {
+        logger.info("Iniciando creacion de cuenta Alpaca para el usuario: {}", request.getContact().getEmailAddress());
+
         try {
             HttpHeaders headers = construirHeadersAutenticados();
             AlpacaAccountRequestDTO cuerpo = construirRequestAlpaca(request);
@@ -59,14 +64,20 @@ public class AlpacaService implements IAlpacaService {
             );
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                return response.getBody();
+                AlpacaAccountResponseDTO body = response.getBody();
+                logger.info("Cuenta Alpaca creada exitosamente. ID Alpaca: {}", body.getId());
+                return body;
             } else {
                 throw new AlpacaAccountCreationException("Error inesperado al crear la cuenta: " + response.getBody());
             }
 
         } catch (HttpClientErrorException.Conflict e) {
+            logger.error("Conflicto al crear cuenta en Alpaca: ya existe una cuenta para el email {}",
+                    request.getContact().getEmailAddress());
             throw new AlpacaDuplicateAccountException("Ya existe una cuenta en Alpaca con este correo.");
         } catch (HttpClientErrorException e) {
+            logger.error("Error HTTP al crear cuenta Alpaca para email {}: {}",
+                    request.getContact().getEmailAddress(), e.getMessage());
             throw new AlpacaAccountCreationException("Error al llamar a la API de Alpaca: " + e.getMessage());
         }
     }
@@ -81,6 +92,9 @@ public class AlpacaService implements IAlpacaService {
         cuenta.setCreatedAt(LocalDateTime.now());
 
         alpacaAccountRepository.save(cuenta);
+        logger.info("Cuenta Alpaca con ID {} asociada al usuario con ID {} fue guardada en base de datos.",
+                dto.getId(), idUsuario);
+
     }
 
     private HttpHeaders construirHeadersAutenticados() {
@@ -104,6 +118,9 @@ public class AlpacaService implements IAlpacaService {
 
     private User obtenerUsuario(Long idUsuario) {
         return userRepository.findById(idUsuario)
-                .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado"));
+                .orElseThrow(() -> {
+                    logger.error("No se encontro un usuario con ID {}", idUsuario);
+                    return new UsuarioNoEncontradoException("Usuario no encontrado");
+                });
     }
 }

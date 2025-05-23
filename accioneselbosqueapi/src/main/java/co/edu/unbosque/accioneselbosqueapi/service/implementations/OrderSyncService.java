@@ -6,6 +6,8 @@ import co.edu.unbosque.accioneselbosqueapi.repository.IOrderRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ public class OrderSyncService {
     private String apiSecret;
 
     private static final String API_URL = "https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/";
+    private static final Logger logger = LoggerFactory.getLogger(OrderSyncService.class);
 
     public OrderSyncService(IOrderRepository orderRepository, OkHttpClient client, ObjectMapper objectMapper) {
         this.orderRepository = orderRepository;
@@ -37,18 +40,24 @@ public class OrderSyncService {
 
     @Scheduled(fixedRate = 10000)
     public void sincronizarEstadosOrdenes() {
+        logger.info("Iniciando sincronización de estados de ordenes...");
         List<Order> ordenes = orderRepository.findAll();
 
         for (Order orden : ordenes) {
-            if (!ordenEsValida(orden)) continue;
-
+            if (!ordenEsValida(orden)) {
+                logger.debug("Orden invalida omitida: ID interno {}", orden.getId());
+                continue;
+            }
             try {
+                logger.debug("Sincronizando orden Alpaca ID: {}", orden.getAlpacaOrderId());
                 String nuevoEstado = obtenerEstadoActualDesdeAPI(orden);
                 actualizarEstadoSiCambio(orden, nuevoEstado);
             } catch (Exception e) {
+                logger.error("Error al sincronizar la orden {}: {}", orden.getAlpacaOrderId(), e.getMessage());
                 throw new OrderSyncException("Error inesperado al sincronizar la orden " + orden.getAlpacaOrderId(), e);
             }
         }
+
     }
 
     private boolean ordenEsValida(Order orden) {
@@ -69,13 +78,17 @@ public class OrderSyncService {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
+                logger.warn("Fallo en la respuesta de Alpaca al consultar orden {}. Codigo HTTP: {}", orderId, response.code());
                 throw new OrderSyncException("Fallo al consultar la orden " + orderId + " de Alpaca (status HTTP " + response.code() + ")");
             }
 
-            JsonNode json = objectMapper.readTree(response.body().string());
-            return json.get("status").asText();
-
+            String body = response.body().string();
+            JsonNode json = objectMapper.readTree(body);
+            String estado = json.get("status").asText();
+            logger.debug("Estado actual de la orden {}: {}", orderId, estado);
+            return estado;
         } catch (IOException e) {
+            logger.error("Error de red al consultar orden {} en Alpaca", orderId, e);
             throw new OrderSyncException("Error de red al sincronizar la orden " + orderId, e);
         }
     }

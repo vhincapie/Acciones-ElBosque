@@ -12,6 +12,7 @@ import co.edu.unbosque.accioneselbosqueapi.repository.IUserSubscriptionRepositor
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IAlpacaService;
 import co.edu.unbosque.accioneselbosqueapi.service.interfaces.IUserService;
 import org.modelmapper.ModelMapper;
+import org.slf4j.MDC;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -28,10 +29,16 @@ import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.*;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 @Service
 public class UserService implements IUserService, UserDetailsService {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private final IUserRepository userRepository;
     private final IUserSubscriptionRepository subscriptionRepository;
     private final IMarketInterestRepository marketInterestRepository;
@@ -70,11 +77,14 @@ public class UserService implements IUserService, UserDetailsService {
         try {
             response = alpacaService.crearCuenta(request);
         } catch (Exception e) {
+            logger.error("Fallo al crear cuenta en Alpaca para usuario: {}", request.getContact().getEmailAddress(), e);
             throw new AlpacaAccountCreationException("No se pudo completar el registro con Alpaca. Intenta mas tarde.");
         }
 
         User nuevoUsuario = modelMapper.map(userDTO, User.class);
         User savedUser = userRepository.save(nuevoUsuario);
+
+        logger.info("Usuario registrado exitosamente: {}", savedUser.getUsername());
 
         crearSuscripcionInicial(savedUser);
         alpacaService.guardarCuentaAlpaca(response, savedUser.getId());
@@ -83,18 +93,24 @@ public class UserService implements IUserService, UserDetailsService {
     }
 
     private void validarDatosRegistro(CreateAccountRequestDTO request) {
-        if (request.getContact() == null)
+        if (request.getContact() == null) {
+            logger.warn("Registro fallido: contacto es nulo");
             throw new AlpacaBadRequestException("Faltan datos obligatorios.");
 
-        if (request.getPassword() == null || request.getPassword().isBlank())
+        }if (request.getPassword() == null || request.getPassword().isBlank()) {
+            logger.warn("Registro fallido: contraseña nula");
             throw new AlpacaBadRequestException("La contraseña no puede ser vacía.");
 
-        if (userRepository.existsByEmail(request.getContact().getEmailAddress()))
+        } if (userRepository.existsByEmail(request.getContact().getEmailAddress())) {
+            logger.warn("Registro fallido: ya existe el usuario");
             throw new AlpacaBadRequestException("Ya existe un usuario con ese correo.");
 
+        }
         LocalDate nacimiento = LocalDate.parse(request.getIdentity().getDateOfBirth());
-        if (Period.between(nacimiento, LocalDate.now()).getYears() < 18)
+        if (Period.between(nacimiento, LocalDate.now()).getYears() < 18) {
+            logger.warn("Registro fallido: usuario no cuenta con la mayoría de edad");
             throw new AlpacaBadRequestException("Debes ser mayor de edad.");
+        }
     }
 
     private UserDTO construirUserDTO(CreateAccountRequestDTO request, MarketInterest mercado) {
@@ -160,6 +176,11 @@ public class UserService implements IUserService, UserDetailsService {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
+        MDC.put("usuario", user.getUsername());
+
+        logger.info("Login exitoso para usuario: {}", user.getUsername());
+
+
         return new LoginResponseDTO(user.getId(), user.getUsername(), user.getNombre());
     }
 
@@ -172,26 +193,32 @@ public class UserService implements IUserService, UserDetailsService {
             throw new CuentaBloqueadaException("Tu cuenta esta bloqueada. Recupera tu contraseña.");
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
+            logger.warn("Login fallido para usuario: {}", username);
             manejarIntentosFallidos(user, false);
             throw new BadCredentialsException("Usuario o contraseña invalidos");
         }
 
         manejarIntentosFallidos(user, true);
 
+        logger.info("Autenticación exitosa para usuario: {}", username);
+
         return new UsernamePasswordAuthenticationToken(
                 user.getUsername(),
                 user.getPassword(),
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
         );
+
     }
 
     private void manejarIntentosFallidos(User user, boolean exitoso) {
         if (exitoso) {
+            logger.info("Se reinician los intentos fallidos para usuario: {}", user.getUsername());
             user.setIntentosFallidos(0);
             user.setBloqueado(false);
         } else {
             user.setIntentosFallidos(user.getIntentosFallidos() + 1);
             if (user.getIntentosFallidos() >= 3) user.setBloqueado(true);
+            logger.warn("Cuenta bloqueada para usuario: {}", user.getUsername());
         }
         userRepository.save(user);
     }
@@ -205,6 +232,7 @@ public class UserService implements IUserService, UserDetailsService {
         userRepository.save(user);
 
         emailService.enviarCorreo(email, "Recuperacion de contraseña", construirCuerpoRecuperacion(user));
+        logger.info("Se ha enviado correo de recuperación a: {}", email);
     }
 
     private String construirCuerpoRecuperacion(User user) {
@@ -224,6 +252,8 @@ public class UserService implements IUserService, UserDetailsService {
         user.setIntentosFallidos(0);
         user.setBloqueado(false);
 
+        logger.info("Contraseña restablecida para usuario con token: {}", token);
+
         return modelMapper.map(userRepository.save(user), UserDTO.class);
     }
 
@@ -235,6 +265,8 @@ public class UserService implements IUserService, UserDetailsService {
         if (user.isBloqueado())
             throw new RuntimeException("Tu cuenta esta bloqueada. Recupera tu contraseña.");
 
+        logger.debug("Usuario cargado correctamente desde BD: {}", username);
+
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
@@ -245,6 +277,7 @@ public class UserService implements IUserService, UserDetailsService {
     @Override
     public User getAuthenticatedUserEntity() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        logger.debug("Usuario autenticado extraído del contexto: {}", username);
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado"));
     }
@@ -273,7 +306,18 @@ public class UserService implements IUserService, UserDetailsService {
             dto.setCustomer("No aplica");
             dto.setSubscription("No aplica");
         }
-
+        logger.debug("Consultando panel para usuario: {}", user.getUsername());
         return dto;
     }
+
+    @Override
+    public List<User> obtenerTodosLosUsuariosInversionistas() {
+        List<User> lista = userRepository.findAll().stream()
+                .filter(user -> user.getRole() == Rol.INVERSIONISTA)
+                .collect(Collectors.toList());
+
+        logger.info("Usuarios inversionistas encontrados: {}", lista.size());
+        return lista;
+    }
+
 }

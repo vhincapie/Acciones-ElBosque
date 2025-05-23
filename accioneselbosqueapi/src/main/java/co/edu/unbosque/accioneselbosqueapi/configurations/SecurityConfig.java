@@ -22,10 +22,10 @@ public class SecurityConfig {
                 .cors(cors -> {})
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/auth/register",
-                                "/api/auth/login",
-                                "/api/auth/recover",
-                                "/api/auth/reset-password",
+                                "/api/auth/v1/register",
+                                "/api/auth/v1/login",
+                                "/api/auth/v1/recover",
+                                "/api/auth/v1/reset-password",
                                 "/css/**"
                         ).permitAll()
                         .anyRequest().authenticated()

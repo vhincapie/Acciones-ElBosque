@@ -15,6 +15,8 @@ import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -33,6 +35,7 @@ public class UserSubscriptionService implements IUserSubscriptionService {
     @Value("${stripe.price.annual}")
     private String priceAnual;
 
+    private static final Logger logger = LoggerFactory.getLogger(UserSubscriptionService.class);
     private final IUserService userService;
     private final IUserSubscriptionRepository subscriptionRepository;
     private final IUserRepository userRepository;
@@ -60,6 +63,8 @@ public class UserSubscriptionService implements IUserSubscriptionService {
 
         Stripe.apiKey = stripeSecretKey;
         Session session = Session.create(params);
+
+        logger.info("Sesion de Stripe creada para usuario: {}, plan: {}", user.getUsername(), tipoPlan);
         return session.getUrl();
     }
 
@@ -73,8 +78,14 @@ public class UserSubscriptionService implements IUserSubscriptionService {
         UserSubscription subscription = modelMapper.map(dto, UserSubscription.class);
         subscription.setUser(user);
 
-        subscriptionRepository.findByUser(user).ifPresent(existing -> subscription.setId(existing.getId()));
+        subscriptionRepository.findByUser(user).ifPresent(existing -> {
+            dto.setId(existing.getId());
+            subscription.setId(existing.getId());
+            logger.info("Actualizando suscripcion existente para usuario: {}", user.getUsername());
+        });
+
         subscriptionRepository.save(subscription);
+        logger.info("Suscripcion activada para usuario: {}, tipo: {}", user.getUsername(), tipoPlan);
 
         return modelMapper.map(subscription, UserSubscriptionDTO.class);
     }
@@ -84,10 +95,14 @@ public class UserSubscriptionService implements IUserSubscriptionService {
         User user = userService.getAuthenticatedUserEntity();
         Optional<UserSubscription> optionalSub = subscriptionRepository.findByUser(user);
 
-        if (optionalSub.isEmpty()) return null;
+        if (optionalSub.isEmpty()) {
+            logger.debug("Usuario {} sin suscripcion registrada", user.getUsername());
+            return null;
+        }
 
         UserSubscription sub = optionalSub.get();
         if (sub.isActivo() && LocalDate.now().isAfter(sub.getFechaCancelacion())) {
+            logger.info("Suscripcion vencida detectada para usuario: {}", user.getUsername());
             limpiarSuscripcionVencida(sub);
             subscriptionRepository.save(sub);
         }
@@ -98,20 +113,25 @@ public class UserSubscriptionService implements IUserSubscriptionService {
     @Override
     public boolean esUsuarioPremium() {
         UserSubscriptionDTO updatedSubscription = verificarYActualizarEstado();
-        return updatedSubscription != null && updatedSubscription.isActivo();
+        boolean esPremium = updatedSubscription != null && updatedSubscription.isActivo();
+        logger.debug("¿Usuario premium? {}", esPremium);
+        return esPremium;
     }
 
     private void validarSuscriptor(User user, UserSubscriptionDTO subDTO) {
         if (user.getRole() != Rol.INVERSIONISTA) {
+            logger.warn("Intento de suscripcion con rol no permitido: {}", user.getRole());
             throw new SuscripcionException("Solo los usuarios con rol INVERSIONISTA pueden adquirir una suscripcion.");
         }
         if (subDTO != null && subDTO.isActivo()) {
+            logger.warn("Usuario {} ya tiene una suscripcion activa", user.getUsername());
             throw new SuscripcionException("Ya tienes una suscripcion activa.");
         }
 
         subscriptionRepository.findByUser(user)
                 .filter(UserSubscription::isActivo)
                 .ifPresent(s -> {
+                    logger.warn("Usuario {} ya tiene una suscripcion activa (verificada en BD)", user.getUsername());
                     throw new SuscripcionException("Ya tienes una suscripcion activa.");
                 });
     }
@@ -137,7 +157,10 @@ public class UserSubscriptionService implements IUserSubscriptionService {
 
     private User obtenerUsuarioPorEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new SuscripcionException("Usuario no encontrado con ese correo"));
+                .orElseThrow(() -> {
+                    logger.error("No se encontro usuario con el correo: {}", email);
+                    return new SuscripcionException("Usuario no encontrado con ese correo");
+                });
     }
 
     private void validarRolInversionista(User user) {
@@ -172,6 +195,7 @@ public class UserSubscriptionService implements IUserSubscriptionService {
     }
 
     private void limpiarSuscripcionVencida(UserSubscription sub) {
+        logger.debug("Limpiando datos de suscripcion vencida para usuario ID: {}", sub.getUser().getId());
         sub.setActivo(false);
         sub.setTipoPlan(null);
         sub.setStripeCustomerId(null);
